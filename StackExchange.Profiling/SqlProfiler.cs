@@ -50,12 +50,16 @@ namespace StackExchange.Profiling
             var id = Tuple.Create((object)command, type);
             var current = _inProgress[id];
             current.ExecutionComplete(reader != null);
+
             SqlTiming ignore;
+
             _inProgress.TryRemove(id, out ignore);
+
             if (reader != null)
             {
                 _inProgressReaders[reader] = current;
             }
+
         }
 
         /// <summary>
@@ -64,14 +68,15 @@ namespace StackExchange.Profiling
         public void ReaderFinishedImpl(IDataReader reader)
         {
             SqlTiming stat;
+            SqlTiming ignore;
 
             // this reader may have been disposed/closed by reader code, not by our using()
-            if (_inProgressReaders.TryGetValue(reader, out stat))
-            {
-                stat.ReaderFetchComplete();
-                SqlTiming ignore;
-                _inProgressReaders.TryRemove(reader, out ignore);
-            }
+            if (!_inProgressReaders.TryGetValue(reader, out stat))
+                return;
+
+            stat.ReaderFetchComplete();
+
+            _inProgressReaders.TryRemove(reader, out ignore);
         }
 
         /// <summary>
@@ -93,8 +98,7 @@ namespace StackExchange.Profiling
         /// </summary>
         public static void ExecuteStart(this SqlProfiler sqlProfiler, IDbCommand command, SqlExecuteType type)
         {
-            if (sqlProfiler == null) return;
-            sqlProfiler.ExecuteStartImpl(command, type);
+            sqlProfiler?.ExecuteStartImpl(command, type);
         }
 
         /// <summary>
@@ -106,8 +110,7 @@ namespace StackExchange.Profiling
             SqlExecuteType type, 
             DbDataReader reader = null)
         {
-            if (sqlProfiler == null) return;
-            sqlProfiler.ExecuteFinishImpl(command, type, reader);
+            sqlProfiler?.ExecuteFinishImpl(command, type, reader);
         }
 
         /// <summary>
@@ -115,8 +118,7 @@ namespace StackExchange.Profiling
         /// </summary>
         public static void ReaderFinish(this SqlProfiler sqlProfiler, IDataReader reader)
         {
-            if (sqlProfiler == null) return;
-            sqlProfiler.ReaderFinishedImpl(reader);
+            sqlProfiler?.ReaderFinishedImpl(reader);
         }
     }
 }

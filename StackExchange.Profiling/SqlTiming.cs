@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlClient;
 using System.Data.SqlTypes;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 using StackExchange.Profiling.Data;
 using StackExchange.Profiling.Helpers;
 using StackExchange.Profiling.SqlFormatters;
@@ -28,19 +30,21 @@ namespace StackExchange.Profiling
         /// </summary>
         public SqlTiming(IDbCommand command, SqlExecuteType type, MiniProfiler profiler)
         {
-            if (profiler == null) throw new ArgumentNullException("profiler");
+            if (profiler == null)
+                throw new ArgumentNullException(nameof(profiler));
+
             _profiler = profiler;
-            
+
             var commandText = AddSpacesToParameters(command.CommandText);
             var parameters = GetCommandParameters(command);
 
             if (MiniProfiler.Settings.SqlFormatter != null)
-            {
                 commandText = MiniProfiler.Settings.SqlFormatter.GetFormattedSql(commandText, parameters, command);
-            }
 
             _customTiming = profiler.CustomTiming("sql", commandText, type.ToString());
-            if (_customTiming == null) throw new InvalidOperationException();
+
+            if (_customTiming == null)
+                throw new InvalidOperationException();
         }
 
         /// <summary>
@@ -61,7 +65,9 @@ namespace StackExchange.Profiling
         /// </summary>
         public override bool Equals(object other)
         {
-            return other is SqlTiming && _customTiming.Id.Equals(((SqlTiming)other)._customTiming.Id);
+            var timing = other as SqlTiming;
+
+            return timing != null && _customTiming.Id.Equals(timing._customTiming.Id);
         }
 
         /// <summary>
@@ -101,7 +107,8 @@ namespace StackExchange.Profiling
         /// </summary>
         private static string GetValue(IDataParameter parameter)
         {
-            object rawValue = parameter.Value;
+            var rawValue = parameter.Value;
+
             if (rawValue == null || rawValue == DBNull.Value)
             {
                 return null;
@@ -111,6 +118,7 @@ namespace StackExchange.Profiling
             if (parameter.DbType == DbType.Binary)
             {
                 var bytes = rawValue as byte[];
+
                 if (bytes != null && bytes.Length <= MaxByteParameterSize)
                 {
                     return "0x" + BitConverter.ToString(bytes).Replace("-", string.Empty);
@@ -118,6 +126,29 @@ namespace StackExchange.Profiling
 
                 // Parameter is too long, so blank it instead
                 return null;
+
+            }
+
+            var param = parameter as SqlParameter;
+
+            if (parameter.DbType == DbType.Object && param != null && param.SqlDbType == SqlDbType.Structured)
+            {
+                var r = param.Value as DataTable;
+
+                if (r != null)
+                {
+                    var result = new List<object>();
+
+                    foreach (DataRow x in r.Rows)
+                    {
+                        for (var i = 0; i < x.ItemArray.Length; i++)
+                        {
+                            result.Add(new { Name = x.Table.Columns.Count > i ? x.Table.Columns[i].ColumnName : "Unk", Value = x.ItemArray[i] });
+                        }
+                    }
+
+                    return JsonConvert.SerializeObject(result);
+                }
             }
 
             if (rawValue is DateTime)
@@ -127,11 +158,14 @@ namespace StackExchange.Profiling
 
             // we want the integral value of an enum, not its string representation
             var rawType = rawValue.GetType();
+
+            // ReSharper disable once ConvertIfStatementToReturnStatement
             if (rawType.IsEnum)
             {
                 // use ChangeType, as we can't cast - http://msdn.microsoft.com/en-us/library/exx3b86w(v=vs.80).aspx
                 return Convert.ChangeType(rawValue, Enum.GetUnderlyingType(rawType)).ToString();
             }
+
 
             return rawValue.ToString();
         }
@@ -139,22 +173,19 @@ namespace StackExchange.Profiling
         private static int GetParameterSize(IDbDataParameter parameter)
         {
             var value = parameter.Value as INullable;
-            if (value != null)
-            {
-                var nullable = value;
-                if (nullable.IsNull)
-                {
-                    return 0;
-                }
-            }
 
-            return parameter.Size;
+            if (value == null)
+                return parameter.Size;
+
+            var nullable = value;
+
+            return nullable.IsNull ? 0 : parameter.Size;
         }
-        
+
         /// <summary>
         /// To help with display, put some space around crowded commas.
         /// </summary>
-        private string AddSpacesToParameters(string commandString)
+        private static string AddSpacesToParameters(string commandString)
         {
             return Regex.Replace(commandString, @",([^\s])", ", $1");
         }
