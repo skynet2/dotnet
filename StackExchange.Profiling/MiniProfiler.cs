@@ -72,7 +72,7 @@ namespace StackExchange.Profiling
         /// Identifies this Profiler so it may be stored/cached.
         /// </summary>
         [DataMember(Order = 1)]
-        public Guid Id { get; set; }
+        public Guid Id { get; }
 
         /// <summary>
         /// Gets or sets a display name for this profiling session.
@@ -250,8 +250,6 @@ namespace StackExchange.Profiling
         /// </summary>
         public static MiniProfiler Start()
         {
-            // ToDo - overloading the method too many times - will correct when delete the Obsolete version. 
-            // Until then need it this way to prevent ambiguity
             return Start(null);
         }
 
@@ -292,19 +290,6 @@ namespace StackExchange.Profiling
         }
 
         /// <summary>
-        /// Returns an <see cref="IDisposable"/> that will time the code between its creation and disposal. Use this method when you
-        /// do not wish to include the StackExchange.Profiling namespace for the <see cref="MiniProfilerExtensions.Step(MiniProfiler,string)"/> extension method.
-        /// </summary>
-        /// <param name="name">A descriptive name for the code that is encapsulated by the resulting IDisposable's lifetime.</param>
-        /// <param name="level">This step's visibility level; allows filtering when <see cref="MiniProfiler.Start(string)"/> is called.</param>
-        /// <returns>the static step.</returns>
-        [Obsolete("Please use the StepStatic(string name) overload instead of this one. ProfileLevel is going away")]
-        public static IDisposable StepStatic(string name, ProfileLevel level)
-        {
-            return Current.Step(name, level);
-        }
-
-        /// <summary>
         /// Renders the current <see cref="MiniProfiler"/> to JSON.
         /// </summary>
         public static string ToJson()
@@ -331,40 +316,6 @@ namespace StackExchange.Profiling
         private static JavaScriptSerializer GetJsonSerializer()
         {
             return new JavaScriptSerializer { MaxJsonLength = Settings.MaxJsonResponseSize };
-        }
-
-        /// <summary>
-        /// Returns the <c>css</c> and <c>javascript</c> includes needed to display the MiniProfiler results UI.
-        /// </summary>
-        /// <param name="position">Which side of the page the profiler popup button should be displayed on (defaults to left)</param>
-        /// <param name="showTrivial">Whether to show trivial timings by default (defaults to false)</param>
-        /// <param name="showTimeWithChildren">Whether to show time the time with children column by default (defaults to false)</param>
-        /// <param name="maxTracesToShow">The maximum number of trace popups to show before removing the oldest (defaults to 15)</param>
-        /// <param name="showControls">when true, shows buttons to minimize and clear MiniProfiler results</param>
-        /// <param name="useExistingjQuery">
-        /// Should MiniProfiler attempt to load its own version of jQuery, or rely on a version previously loaded on the page?
-        /// </param>
-        /// <param name="samplingOnly">The sampling Only.</param>
-        /// <param name="startHidden">Should the profiler start as hidden. Default to null.</param>
-        /// <returns>Script and link elements normally; an empty string when there is no active profiling session.</returns>
-        public static IHtmlString RenderIncludes(
-            RenderPosition? position = null,
-            bool? showTrivial = null,
-            bool? showTimeWithChildren = null,
-            int? maxTracesToShow = null,
-            bool? showControls = null,
-            bool? useExistingjQuery = null, // TODO: we need to deprecate this
-            bool samplingOnly = false,      // TODO: can we remove this?
-            bool? startHidden = null)
-        {
-            return MiniProfilerHandler.RenderIncludes(
-                Current,
-                position,
-                showTrivial,
-                showTimeWithChildren,
-                maxTracesToShow,
-                showControls,
-                startHidden);
         }
 
         /// <summary>

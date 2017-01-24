@@ -66,9 +66,6 @@
     <Compile Include="ClientTimings.cs" />
     <Compile Include="CustomTiming.cs" />
     <Compile Include="Helpers\Compression.cs" />
-    <Compile Include="MiniProfilerHandler.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="SqlFormatters\IAdvancedSqlFormatter.cs" />
     <Compile Include="SqlFormatters\SqlFormatterExtensions.cs" />
     <Compile Include="SqlFormatters\VerboseSqlServerFormatter.cs" />

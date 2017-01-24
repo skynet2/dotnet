@@ -14,16 +14,6 @@ namespace StackExchange.Profiling
     public partial class WebRequestProfilerProvider : BaseProfilerProvider
     {
         /// <summary>
-        /// Initialises a new instance of the <see cref="WebRequestProfilerProvider"/> class. 
-        /// Public constructor.  This also registers any UI routes needed to display results
-        /// </summary>
-        public WebRequestProfilerProvider()
-        {
-            MiniProfilerHandler.RegisterRoutes();
-        }
-
-
-        /// <summary>
         /// Starts a new MiniProfiler and associates it with the current <see cref="HttpContext.Current"/>.
         /// </summary>
         public override MiniProfiler Start(string sessionName = null)
@@ -66,11 +56,9 @@ namespace StackExchange.Profiling
         public override void Stop(bool discardResults)
         {
             var context = HttpContext.Current;
-            if (context == null)
-                return;
-
             var current = Current;
-            if (current == null)
+
+            if (context == null || current == null)
                 return;
 
             // stop our timings - when this is false, we've already called .Stop before on this session
@@ -121,27 +109,28 @@ namespace StackExchange.Profiling
         private static void EnsureName(MiniProfiler profiler, HttpRequest request)
         {
             // also set the profiler name to Controller/Action or /url
-            if (string.IsNullOrWhiteSpace(profiler.Name))
+            if (!string.IsNullOrWhiteSpace(profiler.Name))
+                return;
+
+            var rc = request.RequestContext;
+            RouteValueDictionary values;
+
+            if (rc?.RouteData != null && (values = rc.RouteData.Values).Count > 0)
             {
-                var rc = request.RequestContext;
-                RouteValueDictionary values;
+                var controller = values["Controller"];
+                var action = values["Action"];
 
-                if (rc != null && rc.RouteData != null && (values = rc.RouteData.Values).Count > 0)
-                {
-                    var controller = values["Controller"];
-                    var action = values["Action"];
-
-                    if (controller != null && action != null)
-                        profiler.Name = controller.ToString() + "/" + action.ToString();
-                }
-
-                if (string.IsNullOrWhiteSpace(profiler.Name))
-                {
-                    profiler.Name = request.Url.AbsolutePath ?? string.Empty;
-                    if (profiler.Name.Length > 50)
-                        profiler.Name = profiler.Name.Remove(50);
-                }
+                if (controller != null && action != null)
+                    profiler.Name = controller + "/" + action;
             }
+
+            if (!string.IsNullOrWhiteSpace(profiler.Name))
+                return;
+
+            profiler.Name = request.Url.AbsolutePath;
+
+            if (profiler.Name.Length > 50)
+                profiler.Name = profiler.Name.Remove(50);
         }
 
         /// <summary>
@@ -163,14 +152,15 @@ namespace StackExchange.Profiling
             get
             {
                 var context = HttpContext.Current;
-                if (context == null) return null;
 
-                return context.Items[CacheKey] as MiniProfiler;
+                return context?.Items[CacheKey] as MiniProfiler;
             }
             set
             {
                 var context = HttpContext.Current;
-                if (context == null) return;
+
+                if (context == null)
+                    return;
 
                 context.Items[CacheKey] = value;
             }
