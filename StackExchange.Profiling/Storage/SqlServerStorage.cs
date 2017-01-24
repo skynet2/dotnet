@@ -70,7 +70,6 @@ select       @Id,
              @User,
              @HasUserViewed,
              @MachineName,
-             @CustomLinksJson,
              @ClientTimingsRedirectCount
 where not exists (select 1 from MiniProfilers where Id = @Id)"; // this syntax works on both mssql and sqlite
 
@@ -87,7 +86,6 @@ where not exists (select 1 from MiniProfilers where Id = @Id)"; // this syntax w
                             profiler.DurationMilliseconds,
                             profiler.HasUserViewed,
                             MachineName = profiler.MachineName.Truncate(100),
-                            profiler.CustomLinksJson,
                             ClientTimingsRedirectCount = profiler.ClientTimings != null ? profiler.ClientTimings.RedirectCount : (int?)null
                         });
 

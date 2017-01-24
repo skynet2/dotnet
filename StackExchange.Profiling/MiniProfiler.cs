@@ -99,32 +99,6 @@ namespace StackExchange.Profiling
         public string MachineName { get; set; }
 
         /// <summary>
-        /// Keys are names, values are URLs, allowing additional links to be added to a profiler result, e.g. perhaps a deeper
-        /// diagnostic page for the current request.
-        /// </summary>
-        /// <remarks>
-        /// Use <see cref="MiniProfilerExtensions.AddCustomLink"/> to easily add a name/url pair to this dictionary.
-        /// </remarks>
-        [DataMember(Order = 6)]
-        public Dictionary<string, string> CustomLinks { get; set; }
-
-        /// <summary>
-        /// Json used to store Custom Links. Do not touch.
-        /// </summary>
-        [ScriptIgnore]
-        public string CustomLinksJson
-        {
-            get { return CustomLinks?.ToJson(); }
-            set
-            {
-                if (value.HasValue())
-                {
-                    CustomLinks = value.FromJson<Dictionary<string, string>>();
-                }
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the root timing.
         /// The first <see cref="Timing"/> that is created and started when this profiler is instantiated.
         /// All other <see cref="Timing"/>s will be children of this one.
@@ -305,14 +279,6 @@ namespace StackExchange.Profiling
             return profiler == null ? null : GetJsonSerializer().Serialize(profiler);
         }
 
-        /// <summary>
-        /// Deserializes the JSON string parameter to a <see cref="MiniProfiler"/>.
-        /// </summary>
-        public static MiniProfiler FromJson(string json)
-        {
-            return json.HasValue() ? GetJsonSerializer().Deserialize<MiniProfiler>(json) : null;
-        }
-
         private static JavaScriptSerializer GetJsonSerializer()
         {
             return new JavaScriptSerializer { MaxJsonLength = Settings.MaxJsonResponseSize };
@@ -358,11 +324,12 @@ namespace StackExchange.Profiling
 
                 yield return timing;
 
-                if (timing.HasChildren)
-                {
-                    var children = timing.Children;
-                    for (int i = children.Count - 1; i >= 0; i--) timings.Push(children[i]);
-                }
+                if (!timing.HasChildren)
+                    continue;
+                var children = timing.Children;
+
+                for (int i = children.Count - 1; i >= 0; i--)
+                    timings.Push(children[i]);
             }
         }
 
@@ -372,6 +339,7 @@ namespace StackExchange.Profiling
         public MiniProfiler Clone()
         {
             var serializer = new DataContractSerializer(typeof(MiniProfiler), null, int.MaxValue, false, true, null);
+
             using (var ms = new MemoryStream())
             {
                 serializer.WriteObject(ms, this);
@@ -385,29 +353,17 @@ namespace StackExchange.Profiling
             return new Timing(this, Head, name, minSaveMs, includeChildrenWithMinSave);
         }
 
-        [Obsolete("Please use the StepImpl(string name) overload instead of this one. ProfileLevel is going away.")]
-        internal IDisposable StepImpl(string name, ProfileLevel level)
-        {
-            return level > Level ? null : StepImpl(name);
-        }
-
-        internal IDisposable IgnoreImpl()
-        {
-            return new Suppression(this);
-        }
-
         internal bool StopImpl()
         {
             if (!_sw.IsRunning)
                 return false;
 
             _sw.Stop();
+
             DurationMilliseconds = GetRoundedMilliseconds(ElapsedTicks);
 
             foreach (var timing in GetTimingHierarchy())
-            {
                 timing.Stop();
-            }
 
             return true;
         }
@@ -418,7 +374,9 @@ namespace StackExchange.Profiling
         internal decimal GetRoundedMilliseconds(long ticks)
         {
             long z = 10000 * ticks;
+
             decimal timesTen = (int)(z / _sw.Frequency);
+
             return timesTen / 10;
         }
 
@@ -428,18 +386,6 @@ namespace StackExchange.Profiling
         internal decimal GetDurationMilliseconds(long startTicks)
         {
             return GetRoundedMilliseconds(ElapsedTicks - startTicks);
-        }
-
-        /// <summary>
-        /// Called immediately after deserialization.
-        /// </summary>
-        [OnDeserialized]
-        public void OnDeserialized(StreamingContext ctx)
-        {
-            if (_root != null)
-            {
-                //_root.RebuildParentTimings();
-            }
         }
     }
 }
