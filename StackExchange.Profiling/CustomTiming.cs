@@ -47,7 +47,7 @@ namespace StackExchange.Profiling
         /// Unique identifier for this <see cref="CustomTiming"/>.
         /// </summary>
         [DataMember(Order = 1)]
-        public Guid Id { get; set; }
+        public Guid Id { get; }
 
         /// <summary>
         /// Gets or sets the command that was executed, e.g. "select * from Table" or "INCR my:redis:key"

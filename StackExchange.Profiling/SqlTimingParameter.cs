@@ -61,7 +61,7 @@ namespace StackExchange.Profiling
         /// </summary>
         public override int GetHashCode()
         {
-            int hashcode = Name.GetHashCode();
+            var hashcode = Name.GetHashCode();
             
             if (Value != null)
                 hashcode ^= Value.GetHashCode();
