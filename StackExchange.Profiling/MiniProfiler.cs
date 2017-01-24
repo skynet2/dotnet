@@ -162,27 +162,6 @@ namespace StackExchange.Profiling
         public int? ClientTimingsRedirectCount { get; set; }
 
         /// <summary>
-        /// Gets or sets a string identifying the user/client that is profiling this request.
-        /// </summary>
-        /// <remarks>
-        /// If this is not set manually at some point, the <see cref="IUserProvider"/> implementation will be used;
-        /// by default, this will be the current request's IP address.
-        /// </remarks>
-        [DataMember(Order = 9)]
-        public string User { get; set; }
-
-        /// <summary>
-        /// Returns true when this MiniProfiler has been viewed by the <see cref="User"/> that recorded it.
-        /// </summary>
-        /// <remarks>
-        /// Allows POSTs that result in a redirect to be profiled. <see cref="MiniProfiler.Settings.Storage"/> implementation
-        /// will keep a list of all profilers that haven't been fetched down.
-        /// </remarks>
-        [DataMember(Order = 10)]
-        [ScriptIgnore]
-        public bool HasUserViewed { get; set; }
-
-        /// <summary>
         /// Gets or sets whether or not filtering is allowed of <see cref="Timing"/> steps based on what <see cref="ProfileLevel"/> 
         /// the steps are created with.
         /// </summary>

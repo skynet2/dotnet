@@ -65,7 +65,6 @@
     </Compile>
     <Compile Include="ClientTimings.cs" />
     <Compile Include="CustomTiming.cs" />
-    <Compile Include="Helpers\Compression.cs" />
     <Compile Include="SqlFormatters\IAdvancedSqlFormatter.cs" />
     <Compile Include="SqlFormatters\SqlFormatterExtensions.cs" />
     <Compile Include="SqlFormatters\VerboseSqlServerFormatter.cs" />
@@ -99,7 +98,6 @@
     <Compile Include="Helpers\SqlBuilder.cs" />
     <Compile Include="Helpers\SqlMapper.cs" />
     <Compile Include="Helpers\StackTraceSnippet.cs" />
-    <Compile Include="Helpers\HaackFormatter.cs" />
     <Compile Include="IpAddressProvider.cs">
       <DependentUpon>IUserProvider.cs</DependentUpon>
     </Compile>

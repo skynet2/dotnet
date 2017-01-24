@@ -62,7 +62,6 @@ namespace StackExchange.Profiling
             }
 
             var request = context.Request;
-            var response = context.Response;
 
             // set the profiler name to Controller/Action or /url
             EnsureName(current, request);

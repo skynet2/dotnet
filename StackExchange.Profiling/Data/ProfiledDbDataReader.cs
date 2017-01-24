@@ -24,9 +24,8 @@ namespace StackExchange.Profiling.Data
         /// Initialises a new instance of the <see cref="ProfiledDbDataReader"/> class.
         /// </summary>
         /// <param name="reader">The reader.</param>
-        /// <param name="connection">The connection.</param>
         /// <param name="profiler">The profiler.</param>
-        public ProfiledDbDataReader(DbDataReader reader, DbConnection connection, IDbProfiler profiler)
+        public ProfiledDbDataReader(DbDataReader reader, IDbProfiler profiler)
         {
             _reader = reader;
 
@@ -39,50 +38,32 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the depth.
         /// </summary>
-        public override int Depth
-        {
-            get { return _reader.Depth; }
-        }
+        public override int Depth => _reader.Depth;
 
         /// <summary>
         /// Gets the field count.
         /// </summary>
-        public override int FieldCount
-        {
-            get { return _reader.FieldCount; }
-        }
+        public override int FieldCount => _reader.FieldCount;
 
         /// <summary>
         /// Gets a value indicating whether has rows.
         /// </summary>
-        public override bool HasRows
-        {
-            get { return _reader.HasRows; }
-        }
+        public override bool HasRows => _reader.HasRows;
 
         /// <summary>
         /// Gets a value indicating whether is closed.
         /// </summary>
-        public override bool IsClosed
-        {
-            get { return _reader.IsClosed; }
-        }
+        public override bool IsClosed => _reader.IsClosed;
 
         /// <summary>
         /// Gets the records affected.
         /// </summary>
-        public override int RecordsAffected
-        {
-            get { return _reader.RecordsAffected; }
-        }
+        public override int RecordsAffected => _reader.RecordsAffected;
 
         /// <summary>
         /// The <see cref="DbDataReader"/> that is being used
         /// </summary>
-        public DbDataReader WrappedReader
-        {
-            get { return _reader; }
-        }
+        public DbDataReader WrappedReader => _reader;
 
         /// <summary>
         /// The 
@@ -93,10 +74,7 @@ namespace StackExchange.Profiling.Data
         /// <returns>
         /// The <see cref="object"/>.
         /// </returns>
-        public override object this[string name]
-        {
-            get { return _reader[name]; }
-        }
+        public override object this[string name] => _reader[name];
 
         /// <summary>
         /// The 
@@ -107,10 +85,7 @@ namespace StackExchange.Profiling.Data
         /// <returns>
         /// The <see cref="object"/>.
         /// </returns>
-        public override object this[int ordinal]
-        {
-            get { return _reader[ordinal]; }
-        }
+        public override object this[int ordinal] => _reader[ordinal];
 
         /// <summary>
         /// The close.
@@ -119,15 +94,9 @@ namespace StackExchange.Profiling.Data
         {
             // this can occur when we're not profiling, but we've inherited from ProfiledDbCommand and are returning a
             // an unwrapped reader from the base command
-            if (_reader != null)
-            {
-                _reader.Close();
-            }
+            _reader?.Close();
 
-            if (_profiler != null)
-            {
-                _profiler.ReaderFinish(this);
-            }
+            _profiler?.ReaderFinish(this);
         }
 
         /// <summary>
