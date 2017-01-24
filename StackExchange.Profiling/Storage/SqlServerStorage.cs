@@ -58,7 +58,6 @@ SELECT * FROM MiniProfilerClientTimings WHERE MiniProfilerId = @id ORDER BY Star
              RootTimingId,
              Started,
              DurationMilliseconds,
-             [User],
              HasUserViewed,
              MachineName,
              CustomLinksJson,
@@ -81,12 +80,11 @@ where not exists (select 1 from MiniProfilers where Id = @Id)"; // this syntax w
                         {
                             profiler.Id,
                             profiler.Started,
-                            User = profiler.User.Truncate(100),
-                            RootTimingId = profiler.Root != null ? profiler.Root.Id : (Guid?)null,
+                            RootTimingId = profiler.Root?.Id,
                             profiler.DurationMilliseconds,
                             profiler.HasUserViewed,
                             MachineName = profiler.MachineName.Truncate(100),
-                            ClientTimingsRedirectCount = profiler.ClientTimings != null ? profiler.ClientTimings.RedirectCount : (int?)null
+                            ClientTimingsRedirectCount = profiler.ClientTimings?.RedirectCount
                         });
 
                 var timings = new List<Timing>();

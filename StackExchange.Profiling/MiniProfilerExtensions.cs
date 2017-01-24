@@ -12,38 +12,6 @@ namespace StackExchange.Profiling
     public static class MiniProfilerExtensions
     {
         /// <summary>
-        /// Wraps <paramref name="selector"/> in a <see cref="Step(MiniProfiler, string)"/> call and executes it, returning its result.
-        /// </summary>
-        /// <typeparam name="T">the type of result.</typeparam>
-        /// <param name="profiler">The current profiling session or null.</param>
-        /// <param name="selector">Method to execute and profile.</param>
-        /// <param name="name">The <see cref="Timing"/> step name used to label the profiler results.</param>
-        /// <returns>the profiled result.</returns>
-        public static T Inline<T>(this MiniProfiler profiler, Func<T> selector, string name)
-        {
-            if (selector == null) throw new ArgumentNullException("selector");
-            if (profiler == null) return selector();
-            using (profiler.StepImpl(name))
-            {
-                return selector();
-            }
-        }
-
-        /// <summary>
-        /// Wraps <paramref name="selector"/> in a <see cref="Step(MiniProfiler, string)"/> call and executes it, returning its result.
-        /// </summary>
-        /// <typeparam name="T">the type of result.</typeparam>
-        /// <param name="profiler">The current profiling session or null.</param>
-        /// <param name="selector">Method to execute and profile.</param>
-        /// <param name="name">The <see cref="Timing"/> step name used to label the profiler results.</param>
-        /// <param name="level">This step's visibility level; allows filtering when <see cref="MiniProfiler.Start(string)"/> is called.</param>
-        /// <returns>the profiled result.</returns>
-        [Obsolete("Please use the Inline(Func<T> selector, string name) overload instead of this one. ProfileLevel is going away.")]
-        public static T Inline<T>(this MiniProfiler profiler, Func<T> selector, string name, ProfileLevel level)
-        {
-            return profiler.Inline(selector, name);
-        }
-        /// <summary>
         /// Returns an <see cref="IDisposable"/> that will time the code between its creation and disposal.
         /// </summary>
         /// <param name="profiler">The current profiling session or null.</param>
@@ -52,23 +20,6 @@ namespace StackExchange.Profiling
         public static IDisposable Step(this MiniProfiler profiler, string name)
         {
             return profiler?.StepImpl(name);
-        }
-
-        /// <summary>
-        /// Returns an <see cref="IDisposable"/> that will time the code between its creation and disposal.
-        /// Will only save the <see cref="Timing"/> if total time taken exceeds <paramref name="minSaveMs" />.
-        /// </summary>
-        /// <param name="profiler">The current profiling session or null.</param>
-        /// <param name="name">A descriptive name for the code that is encapsulated by the resulting IDisposable's lifetime.</param>
-        /// <param name="minSaveMs">The minimum amount of time that needs to elapse in order for this result to be recorded.</param>
-        /// <param name="includeChildren">Should the amount of time spent in child timings be included when comparing total time
-        /// profiled with <paramref name="minSaveMs"/>? If true, will include children. If false will ignore children.</param>
-        /// <returns></returns>
-        /// <remarks>If <paramref name="includeChildren"/> is set to true and a child is removed due to its use of StepIf, then the 
-        /// time spent in that time will also not count for the current StepIf calculation.</remarks>
-        public static IDisposable StepIf(this MiniProfiler profiler, string name, decimal minSaveMs, bool includeChildren = false)
-        {
-            return profiler?.StepImpl(name, minSaveMs, includeChildren);
         }
 
         /// <summary>

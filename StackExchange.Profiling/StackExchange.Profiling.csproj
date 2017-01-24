@@ -114,10 +114,8 @@
       <DependentUpon>MiniProfiler.cs</DependentUpon>
     </Compile>
     <Compile Include="MiniProfiler.cs" />
-    <Compile Include="ClientTimingHelper.cs" />
     <Compile Include="MiniProfilerExtensions.cs" />
     <Compile Include="ProfileLevel.cs" />
-    <Compile Include="RenderPosition.cs" />
     <Compile Include="SqlFormatters\InlineFormatter.cs" />
     <Compile Include="SqlFormatters\ISqlFormatter.cs" />
     <Compile Include="SqlFormatters\SqlServerFormatter.cs" />
@@ -130,9 +128,6 @@
     <Compile Include="SqlProfiler.cs" />
     <Compile Include="Timing.cs" />
     <Compile Include="WebRequestProfilerProvider.cs">
-      <DependentUpon>IProfilerProvider.cs</DependentUpon>
-    </Compile>
-    <Compile Include="WebRequestProfilerProvider.Settings.cs">
       <DependentUpon>IProfilerProvider.cs</DependentUpon>
     </Compile>
   </ItemGroup>

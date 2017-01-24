@@ -21,7 +21,7 @@ namespace StackExchange.Profiling
         /// Holds the maximum size that will be stored for byte[] parameters
         /// </summary>
         private const int MaxByteParameterSize = 512;
-        private readonly MiniProfiler _profiler;
+
         private readonly CustomTiming _customTiming;
 
         /// <summary>
@@ -32,8 +32,6 @@ namespace StackExchange.Profiling
         {
             if (profiler == null)
                 throw new ArgumentNullException(nameof(profiler));
-
-            _profiler = profiler;
 
             var commandText = AddSpacesToParameters(command.CommandText);
             var parameters = GetCommandParameters(command);

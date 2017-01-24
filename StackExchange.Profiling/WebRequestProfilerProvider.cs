@@ -24,15 +24,6 @@ namespace StackExchange.Profiling
                 return null;
 
             var url = context.Request.Url;
-            var path = context.Request.AppRelativeCurrentExecutionFilePath.Substring(1).ToUpperInvariant();
-
-            // don't profile /content or /scripts, either - happens in web.dev
-            foreach (var ignored in MiniProfiler.Settings.IgnoredPaths ?? new string[0])
-                if (path.Contains((ignored ?? string.Empty).ToUpperInvariant()))
-                    return null;
-
-            if (context.Request.Path.StartsWith(VirtualPathUtility.ToAbsolute(MiniProfiler.Settings.RouteBasePath), StringComparison.InvariantCultureIgnoreCase))
-                return null;
 
             var result = new MiniProfiler(sessionName ?? url.OriginalString);
 
@@ -41,7 +32,6 @@ namespace StackExchange.Profiling
             SetProfilerActive(result);
 
             // don't really want to pass in the context to MiniProfler's constructor or access it statically in there, either
-            result.User = Settings.UserProvider.GetUser(context.Request);
 
             return result;
         }
@@ -79,28 +69,6 @@ namespace StackExchange.Profiling
 
             // save the profiler
             SaveProfiler(current);
-
-            try
-            {
-                var arrayOfIds = MiniProfiler.Settings.Storage.GetUnviewedIds(current.User);
-
-                if (arrayOfIds != null && arrayOfIds.Count > MiniProfiler.Settings.MaxUnviewedProfiles) 
-                {
-                    foreach (var id in arrayOfIds.Take(arrayOfIds.Count - MiniProfiler.Settings.MaxUnviewedProfiles)) 
-                    {
-                        MiniProfiler.Settings.Storage.SetViewed(current.User, id);
-                    }
-                }
-
-                // allow profiling of ajax requests
-                if (arrayOfIds != null && arrayOfIds.Count > 0)
-                {
-                    response.AppendHeader("X-MiniProfiler-Ids", arrayOfIds.ToJson());
-                }
-            }
-            catch
-            {
-            } // headers blew up
         }
 
         /// <summary>
