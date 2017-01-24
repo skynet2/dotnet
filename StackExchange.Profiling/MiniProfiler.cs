@@ -112,17 +112,19 @@ namespace StackExchange.Profiling
         /// Json used to store Custom Links. Do not touch.
         /// </summary>
         [ScriptIgnore]
-        public string CustomLinksJson {
-            get { return CustomLinks != null ? CustomLinks.ToJson() : null; } 
-            set {
+        public string CustomLinksJson
+        {
+            get { return CustomLinks?.ToJson(); }
+            set
+            {
                 if (value.HasValue())
                 {
                     CustomLinks = value.FromJson<Dictionary<string, string>>();
                 }
-            } 
+            }
         }
-        
-            /// <summary>
+
+        /// <summary>
         /// Gets or sets the root timing.
         /// The first <see cref="Timing"/> that is created and started when this profiler is instantiated.
         /// All other <see cref="Timing"/>s will be children of this one.
@@ -142,26 +144,26 @@ namespace StackExchange.Profiling
                 // TODO: remove this shit
 
                 // when being deserialized, we need to go through and set all child timings' parents
-                if (_root.HasChildren)
+                if (!_root.HasChildren)
+                    return;
+
+                var timings = new Stack<Timing>();
+
+                timings.Push(_root);
+
+                while (timings.Count > 0)
                 {
-                    var timings = new Stack<Timing>();
+                    var timing = timings.Pop();
 
-                    timings.Push(_root);
+                    if (!timing.HasChildren)
+                        continue;
 
-                    while (timings.Count > 0)
+                    var children = timing.Children;
+
+                    for (var i = children.Count - 1; i >= 0; i--)
                     {
-                        var timing = timings.Pop();
-
-                        if (timing.HasChildren)
-                        {
-                            var children = timing.Children;
-
-                            for (int i = children.Count - 1; i >= 0; i--)
-                            {
-                                children[i].ParentTiming = timing;
-                                timings.Push(children[i]); // FLORIDA!  TODO: refactor this and other stack creation methods into one 
-                            }
-                        }
+                        children[i].ParentTiming = timing;
+                        timings.Push(children[i]); // FLORIDA!  TODO: refactor this and other stack creation methods into one 
                     }
                 }
             }
@@ -223,30 +225,17 @@ namespace StackExchange.Profiling
         /// <summary>
         /// Gets the ticks since this MiniProfiler was started.
         /// </summary>
-        internal long ElapsedTicks
-        {
-            get { return _sw.ElapsedTicks; }
-        }
+        internal long ElapsedTicks => _sw.ElapsedTicks;
 
         /// <summary>
         /// Gets the timer, for unit testing, returns the timer.
         /// </summary>
-        internal IStopwatch Stopwatch
-        {
-            get { return _sw; }
-        }
-        
+        internal IStopwatch Stopwatch => _sw;
+
         /// <summary>
         /// Gets the currently running MiniProfiler for the current HttpContext; null if no MiniProfiler was <see cref="Start(string)"/>ed.
         /// </summary>
-        public static MiniProfiler Current
-        {
-            get
-            {
-                Settings.EnsureProfilerProvider();
-                return Settings.ProfilerProvider.GetCurrentProfiler();
-            }
-        }
+        public static MiniProfiler Current => Settings.ProfilerProvider.GetCurrentProfiler();
 
         /// <summary>
         /// A <see cref="IStorage"/> strategy to use for the current profiler. 
@@ -276,24 +265,7 @@ namespace StackExchange.Profiling
         /// </param>
         public static MiniProfiler Start(string sessionName)
         {
-            Settings.EnsureProfilerProvider();
-            return Settings.ProfilerProvider.Start(ProfileLevel.Info, sessionName);
-        }
-
-        /// <summary>
-        /// Starts a new MiniProfiler based on the current <see cref="IProfilerProvider"/>. This new profiler can be accessed by
-        /// <see cref="MiniProfiler.Current"/>.
-        /// </summary>
-        /// <param name="level">Profiling level. Default to Info.</param>
-        /// <param name="sessionName">
-        /// Allows explicit naming of the new profiling session; when null, an appropriate default will be used, e.g. for
-        /// a web request, the url will be used for the overall session name.
-        /// </param>
-        [Obsolete("Please use the Start(string sessionName) or Start() overload instead of this one. ProfileLevel is going away.")]
-        public static MiniProfiler Start(ProfileLevel level, string sessionName = null)
-        {
-            Settings.EnsureProfilerProvider();
-            return Settings.ProfilerProvider.Start(level, sessionName);
+            return Settings.ProfilerProvider.Start(sessionName);
         }
 
         /// <summary>
@@ -305,7 +277,6 @@ namespace StackExchange.Profiling
         /// </param>
         public static void Stop(bool discardResults = false)
         {
-            Settings.EnsureProfilerProvider();
             Settings.ProfilerProvider.Stop(discardResults);
         }
 
@@ -359,7 +330,7 @@ namespace StackExchange.Profiling
 
         private static JavaScriptSerializer GetJsonSerializer()
         {
-            return new JavaScriptSerializer { MaxJsonLength = Settings.MaxJsonResponseSize };   
+            return new JavaScriptSerializer { MaxJsonLength = Settings.MaxJsonResponseSize };
         }
 
         /// <summary>
@@ -377,22 +348,22 @@ namespace StackExchange.Profiling
         /// <param name="startHidden">Should the profiler start as hidden. Default to null.</param>
         /// <returns>Script and link elements normally; an empty string when there is no active profiling session.</returns>
         public static IHtmlString RenderIncludes(
-            RenderPosition? position = null, 
-            bool? showTrivial = null, 
-            bool? showTimeWithChildren = null, 
-            int? maxTracesToShow = null, 
+            RenderPosition? position = null,
+            bool? showTrivial = null,
+            bool? showTimeWithChildren = null,
+            int? maxTracesToShow = null,
             bool? showControls = null,
             bool? useExistingjQuery = null, // TODO: we need to deprecate this
             bool samplingOnly = false,      // TODO: can we remove this?
             bool? startHidden = null)
         {
             return MiniProfilerHandler.RenderIncludes(
-                Current, 
-                position, 
-                showTrivial, 
-                showTimeWithChildren, 
-                maxTracesToShow, 
-                showControls, 
+                Current,
+                position,
+                showTrivial,
+                showTimeWithChildren,
+                maxTracesToShow,
+                showControls,
                 startHidden);
         }
 

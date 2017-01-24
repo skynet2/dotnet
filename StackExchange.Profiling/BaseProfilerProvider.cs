@@ -14,13 +14,6 @@ namespace StackExchange.Profiling
         /// Starts a new MiniProfiler and sets it to be current.  By the end of this method
         /// <see cref="GetCurrentProfiler"/> should return the new MiniProfiler.
         /// </summary>
-        [Obsolete("Please use the Start(string sessionName) overload instead of this one. ProfileLevel is going away.")]
-        public abstract MiniProfiler Start(ProfileLevel level, string sessionName = null);
-
-        /// <summary>
-        /// Starts a new MiniProfiler and sets it to be current.  By the end of this method
-        /// <see cref="GetCurrentProfiler"/> should return the new MiniProfiler.
-        /// </summary>
         public abstract MiniProfiler Start(string sessionName = null);
 
         /// <summary>

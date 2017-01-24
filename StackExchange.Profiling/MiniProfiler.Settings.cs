@@ -40,7 +40,7 @@ namespace StackExchange.Profiling
                 string location;
                 try
                 {
-                    location = typeof (Settings).Assembly.Location;
+                    location = typeof(Settings).Assembly.Location;
                 }
                 catch
                 {
@@ -310,7 +310,7 @@ namespace StackExchange.Profiling
             /// The formatter applied to any SQL before being set in a <see cref="CustomTiming.CommandString"/>.
             /// </summary>
             public static ISqlFormatter SqlFormatter { get; set; }
-            
+
             /// <summary>
             /// Assembly version of this dank MiniProfiler.
             /// </summary>
@@ -322,7 +322,14 @@ namespace StackExchange.Profiling
             /// <remarks>
             /// If not set explicitly, will default to <see cref="WebRequestProfilerProvider"/>
             /// </remarks>
-            public static IProfilerProvider ProfilerProvider { get; set; }
+            public static IProfilerProvider ProfilerProvider
+            {
+                get { return _profilerProvider ?? (_profilerProvider = new WebRequestProfilerProvider()); }
+                set { _profilerProvider = value; }
+
+            }
+
+            private static IProfilerProvider _profilerProvider;
 
             /// <summary>
             /// A function that determines who can access the MiniProfiler results url and list url.  It should return true when
@@ -347,14 +354,6 @@ namespace StackExchange.Profiling
                 if (Storage == null)
                 {
                     Storage = new Storage.HttpRuntimeCacheStorage(TimeSpan.FromDays(1));
-                }
-            }
-
-            internal static void EnsureProfilerProvider()
-            {
-                if (ProfilerProvider == null)
-                {
-                    ProfilerProvider = new WebRequestProfilerProvider();
                 }
             }
 
