@@ -34,16 +34,7 @@ namespace StackExchange.Profiling.Storage
     /// Provides saving and loading <see cref="MiniProfiler"/>s to a storage medium.
     /// </summary>
     public interface IStorage
-    {
-        /// <summary>
-        /// List the latest profiling results.
-        /// </summary>
-        IEnumerable<Guid> List(
-            int maxResults, 
-            DateTime? start = null, 
-            DateTime? finish = null, 
-            ListResultsOrder orderBy = ListResultsOrder.Descending);
-
+    {   
         /// <summary>
         /// Stores <paramref name="profiler"/> under its <see cref="MiniProfiler.Id"/>.
         /// </summary>
@@ -51,29 +42,5 @@ namespace StackExchange.Profiling.Storage
         /// <remarks>
         /// </remarks>
         void Save(MiniProfiler profiler);
-
-        /// <summary>
-        /// Returns a <see cref="MiniProfiler"/> from storage based on <paramref name="id"/>, 
-        /// which should map to <see cref="MiniProfiler.Id"/>.
-        /// </summary>
-        MiniProfiler Load(Guid id);
-
-        /// <summary>
-        /// Sets a particular profiler session so it is considered "un-viewed"  
-        /// </summary>
-        void SetUnviewed(string user, Guid id);
-
-        /// <summary>
-        /// Sets a particular profiler session to "viewed"
-        /// </summary>
-        void SetViewed(string user, Guid id);
-
-        /// <summary>
-        /// Returns a list of <see cref="MiniProfiler.Id"/>s that haven't been seen by <paramref name="user"/>.
-        /// </summary>
-        /// <param name="user">
-        /// User identified by the current <c>MiniProfiler.Settings.UserProvider</c>
-        /// </param>
-        List<Guid> GetUnviewedIds(string user);
     }
 }

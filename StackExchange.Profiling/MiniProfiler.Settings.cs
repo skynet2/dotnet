@@ -34,46 +34,6 @@ namespace StackExchange.Profiling
                     pair.PropertyInfo.SetValue(null, Convert.ChangeType(pair.DefaultValue.Value, pair.PropertyInfo.PropertyType), null);
                 }
 
-                // this assists in debug and is also good for prd, the version is a hash of the main assembly 
-
-                string location;
-                try
-                {
-                    location = typeof(Settings).Assembly.Location;
-                }
-                catch
-                {
-                    location = HttpContext.Current.Server.MapPath("~/bin/MiniProfiler.dll");
-                }
-
-                try
-                {
-                    var files = new List<string>
-                    {
-                        location
-                    };
-
-                    using (var sha256 = new System.Security.Cryptography.SHA256CryptoServiceProvider())
-                    {
-                        byte[] hash = new byte[sha256.HashSize / 8];
-                        foreach (string file in files)
-                        {
-                            // sha256 can throw a FIPS exception, but SHA256CryptoServiceProvider is FIPS BABY - FIPS 
-                            byte[] contents = System.IO.File.ReadAllBytes(file);
-                            byte[] hashfile = sha256.ComputeHash(contents);
-                            for (int i = 0; i < (sha256.HashSize / 8); i++)
-                            {
-                                hash[i] = (byte)(hashfile[i] ^ hash[i]);
-                            }
-                        }
-                        Version = Convert.ToBase64String(hash);
-                    }
-                }
-                catch
-                {
-                    Version = Guid.NewGuid().ToString();
-                }
-
                 typesToExclude = new HashSet<string>
                 {
                     // while we like our Dapper friend, we don't want to see him all the time
@@ -153,12 +113,6 @@ namespace StackExchange.Profiling
             }
 
             /// <summary>
-            /// The maximum number of unviewed profiler sessions (set this low cause we don't want to blow up headers)
-            /// </summary>
-            [DefaultValue(20)]
-            public static int MaxUnviewedProfiles { get; set; }
-
-            /// <summary>
             /// The max length of the stack string to report back; defaults to 120 chars.
             /// </summary>
             [DefaultValue(120)]
@@ -198,7 +152,6 @@ namespace StackExchange.Profiling
             /// 5) profiler is cached with <see cref="Storage"/>'s implementation of <see cref="StackExchange.Profiling.Storage.IStorage.Save"/>
             /// 6) request ends
             /// 7) page is displayed and profiling results are ajax-fetched down, pulling cached results from 
-            ///    <see cref="Storage"/>'s implementation of <see cref="StackExchange.Profiling.Storage.IStorage.Load"/>
             /// </remarks>
             public static IStorage Storage { get; set; }
 
@@ -212,10 +165,6 @@ namespace StackExchange.Profiling
             }
 
             private static ISqlFormatter _sqlFormatter;
-            /// <summary>
-            /// Assembly version of this dank MiniProfiler.
-            /// </summary>
-            public static string Version { get; private set; }
 
             /// <summary>
             /// The <see cref="IProfilerProvider"/> class that is used to run MiniProfiler
@@ -233,27 +182,9 @@ namespace StackExchange.Profiling
             private static IProfilerProvider _profilerProvider;
 
             /// <summary>
-            /// Make sure we can at least store profiler results to the http runtime cache.
-            /// </summary>
-            internal static void EnsureStorageStrategy()
-            {
-                if (Storage == null)
-                {
-                    Storage = new HttpRuntimeCacheStorage(TimeSpan.FromDays(1));
-                }
-            }
-
-            /// <summary>
             /// Allows switching out stopwatches for unit testing.
             /// </summary>
             internal static Func<IStopwatch> StopwatchProvider { get; set; }
-
-            /// <summary>
-            /// By default, the output of the MiniProfilerHandler is compressed, if the request supports that.
-            /// If this setting is false, the output won't be compressed. (Only do this when you take care of compression yourself)
-            /// </summary>
-            [DefaultValue(true)]
-            public static bool EnableCompression { get; set; }
         }
     }
 }

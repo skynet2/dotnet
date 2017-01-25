@@ -48,6 +48,10 @@
       <HintPath>..\..\fluid\packages\Newtonsoft.Json.9.0.1\lib\net40\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
+      <HintPath>..\..\fluid\packages\NLog.4.4.1\lib\net40\NLog.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.configuration" />
@@ -72,17 +76,14 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SqlTimingParameter.cs" />
+    <Compile Include="Storage\NlogStorage.cs" />
     <Compile Include="Suppression.cs" />
     <Compile Include="Data\ExecuteType.cs" />
     <Compile Include="Data\IDbProfiler.cs" />
-    <Compile Include="Data\SimpleProfiledCommand.cs" />
-    <Compile Include="Data\SimpleProfiledConnection.cs" />
-    <Compile Include="Data\SimpleProfiledDataReader.cs" />
     <Compile Include="Data\ProfiledDbDataAdapter.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Data\ProfiledDbProviderFactory.cs" />
-    <Compile Include="Data\SimpleProfiledTransaction.cs" />
     <Compile Include="Helpers\ExtensionMethods.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -92,7 +93,6 @@
     <Compile Include="Data\ProfiledDbDataReader.cs" />
     <Compile Include="Data\ProfiledDbTransaction.cs" />
     <Compile Include="Helpers\IStopwatch.cs" />
-    <Compile Include="Helpers\SqlMapper.cs" />
     <Compile Include="Helpers\StackTraceSnippet.cs" />
     <Compile Include="IProfilerProvider.cs" />
     <Compile Include="MiniProfiler.IDbProfiler.cs">
@@ -104,13 +104,11 @@
     <Compile Include="MiniProfiler.cs" />
     <Compile Include="MiniProfilerExtensions.cs" />
     <Compile Include="ProfileLevel.cs" />
-    <Compile Include="SqlFormatters\InlineFormatter.cs" />
     <Compile Include="SqlFormatters\ISqlFormatter.cs" />
     <Compile Include="SqlFormatters\SqlServerFormatter.cs" />
     <Compile Include="SingletonProfilerProvider.cs">
       <DependentUpon>IProfilerProvider.cs</DependentUpon>
     </Compile>
-    <Compile Include="Storage\HttpRuntimeCacheStorage.cs" />
     <Compile Include="Storage\IStorage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlProfiler.cs" />
