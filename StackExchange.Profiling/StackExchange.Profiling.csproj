@@ -72,9 +72,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SqlTimingParameter.cs" />
-    <Compile Include="Storage\DatabaseStorageBase.cs" />
-    <Compile Include="Storage\MultiStorageProvider.cs" />
-    <Compile Include="Storage\SqlServerStorage.cs" />
     <Compile Include="Suppression.cs" />
     <Compile Include="Data\ExecuteType.cs" />
     <Compile Include="Data\IDbProfiler.cs" />
@@ -95,16 +92,9 @@
     <Compile Include="Data\ProfiledDbDataReader.cs" />
     <Compile Include="Data\ProfiledDbTransaction.cs" />
     <Compile Include="Helpers\IStopwatch.cs" />
-    <Compile Include="Helpers\SqlBuilder.cs" />
     <Compile Include="Helpers\SqlMapper.cs" />
     <Compile Include="Helpers\StackTraceSnippet.cs" />
-    <Compile Include="IpAddressProvider.cs">
-      <DependentUpon>IUserProvider.cs</DependentUpon>
-    </Compile>
     <Compile Include="IProfilerProvider.cs" />
-    <Compile Include="IUserProvider.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="MiniProfiler.IDbProfiler.cs">
       <DependentUpon>MiniProfiler.cs</DependentUpon>
     </Compile>

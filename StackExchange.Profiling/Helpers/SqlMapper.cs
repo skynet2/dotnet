@@ -23,8 +23,10 @@ namespace StackExchange.Profiling.Helpers.Dapper
     /// <summary>
     /// Dapper, a light weight object mapper for ADO.NET
     /// </summary>
-    public static partial class SqlMapper
+    public static class SqlMapper
     {
+        static Link<Type, Action<IDbCommand, bool>> _bindByNameCache;
+
         /// <summary>
         /// Implement this interface to pass an arbitrary db specific set of parameters to Dapper
         /// </summary>
@@ -37,21 +39,24 @@ namespace StackExchange.Profiling.Helpers.Dapper
             /// <param name="identity">Information about the query</param>
             void AddParameters(IDbCommand command, Identity identity);
         }
-        static Link<Type, Action<IDbCommand, bool>> bindByNameCache;
         static Action<IDbCommand, bool> GetBindByName(Type commandType)
         {
-            if (commandType == null) return null; // GIGO
+            if (commandType == null)
+                return null; // GIGO
+
             Action<IDbCommand, bool> action;
-            if (Link<Type, Action<IDbCommand, bool>>.TryGet(bindByNameCache, commandType, out action))
-            {
+
+            if (Link<Type, Action<IDbCommand, bool>>.TryGet(_bindByNameCache, commandType, out action))
                 return action;
-            }
+
             var prop = commandType.GetProperty("BindByName", BindingFlags.Public | BindingFlags.Instance);
+
             action = null;
-            ParameterInfo[] indexers;
+            var indexers = prop.GetIndexParameters();
             MethodInfo setter;
+
             if (prop != null && prop.CanWrite && prop.PropertyType == typeof(bool)
-                && ((indexers = prop.GetIndexParameters()) == null || indexers.Length == 0)
+                && (indexers == null || indexers.Length == 0)
                 && (setter = prop.GetSetMethod()) != null
                 )
             {
@@ -65,7 +70,7 @@ namespace StackExchange.Profiling.Helpers.Dapper
                 action = (Action<IDbCommand, bool>)method.CreateDelegate(typeof(Action<IDbCommand, bool>));
             }
             // cache it            
-            Link<Type, Action<IDbCommand, bool>>.TryAdd(ref bindByNameCache, commandType, ref action);
+            Link<Type, Action<IDbCommand, bool>>.TryAdd(ref _bindByNameCache, commandType, ref action);
             return action;
         }
         /// <summary>
@@ -79,7 +84,7 @@ namespace StackExchange.Profiling.Helpers.Dapper
             {
                 while (link != null)
                 {
-                    if ((object)key == (object)link.Key)
+                    if (key == link.Key)
                     {
                         value = link.Value;
                         return true;
@@ -89,7 +94,7 @@ namespace StackExchange.Profiling.Helpers.Dapper
                 value = default(TValue);
                 return false;
             }
-            public static bool TryAdd(ref Link<TKey, TValue> head, TKey key, ref TValue value)
+            public static void TryAdd(ref Link<TKey, TValue> head, TKey key, ref TValue value)
             {
                 bool tryAgain;
                 do
@@ -97,15 +102,15 @@ namespace StackExchange.Profiling.Helpers.Dapper
                     var snapshot = Interlocked.CompareExchange(ref head, null, null);
                     TValue found;
                     if (TryGet(snapshot, key, out found))
-                    { // existing match; report the existing value instead
+                    {
+                        // existing match; report the existing value instead
                         value = found;
-                        return false;
+                        return;
                     }
                     var newNode = new Link<TKey, TValue>(key, value, snapshot);
                     // did somebody move our cheese?
                     tryAgain = Interlocked.CompareExchange(ref head, newNode, snapshot) != snapshot;
                 } while (tryAgain);
-                return true;
             }
             private Link(TKey key, TValue value, Link<TKey, TValue> tail)
             {
@@ -117,7 +122,8 @@ namespace StackExchange.Profiling.Helpers.Dapper
             public TValue Value { get; private set; }
             public Link<TKey, TValue> Tail { get; private set; }
         }
-        class CacheInfo
+
+        private class CacheInfo
         {
             public Func<IDataReader, object> Deserializer { get; set; }
             public Func<IDataReader, object>[] OtherDeserializers { get; set; }
@@ -134,7 +140,7 @@ namespace StackExchange.Profiling.Helpers.Dapper
         private static void OnQueryCachePurged()
         {
             var handler = QueryCachePurged;
-            if (handler != null) handler(null, EventArgs.Empty);
+            handler?.Invoke(null, EventArgs.Empty);
         }
 #if CSHARP30
         private static readonly Dictionary<Identity, CacheInfo> _queryCache = new Dictionary<Identity, CacheInfo>();
@@ -173,11 +179,11 @@ namespace StackExchange.Profiling.Helpers.Dapper
             {
                 foreach (var pair in _queryCache)
                 {
-                    if (pair.Value.GetHitCount() <= COLLECT_HIT_COUNT_MIN)
-                    {
-                        CacheInfo cache;
-                        _queryCache.TryRemove(pair.Key, out cache);
-                    }
+                    if (pair.Value.GetHitCount() > COLLECT_HIT_COUNT_MIN)
+                        continue;
+
+                    CacheInfo cache;
+                    _queryCache.TryRemove(pair.Key, out cache);
                 }
             }
 
@@ -226,7 +232,10 @@ namespace StackExchange.Profiling.Helpers.Dapper
         public static IEnumerable<Tuple<string, string, int>> GetCachedSQL(int ignoreHitCountAbove = int.MaxValue)
         {
             var data = _queryCache.Select(pair => Tuple.Create(pair.Key.connectionString, pair.Key.sql, pair.Value.GetHitCount()));
-            if (ignoreHitCountAbove < int.MaxValue) data = data.Where(tuple => tuple.Item3 <= ignoreHitCountAbove);
+
+            if (ignoreHitCountAbove < int.MaxValue)
+                data = data.Where(tuple => tuple.Item3 <= ignoreHitCountAbove);
+
             return data;
         }
 
@@ -261,63 +270,62 @@ namespace StackExchange.Profiling.Helpers.Dapper
 
         static SqlMapper()
         {
-            typeMap = new Dictionary<Type, DbType>();
-            typeMap[typeof(byte)] = DbType.Byte;
-            typeMap[typeof(sbyte)] = DbType.SByte;
-            typeMap[typeof(short)] = DbType.Int16;
-            typeMap[typeof(ushort)] = DbType.UInt16;
-            typeMap[typeof(int)] = DbType.Int32;
-            typeMap[typeof(uint)] = DbType.UInt32;
-            typeMap[typeof(long)] = DbType.Int64;
-            typeMap[typeof(ulong)] = DbType.UInt64;
-            typeMap[typeof(float)] = DbType.Single;
-            typeMap[typeof(double)] = DbType.Double;
-            typeMap[typeof(decimal)] = DbType.Decimal;
-            typeMap[typeof(bool)] = DbType.Boolean;
-            typeMap[typeof(string)] = DbType.String;
-            typeMap[typeof(char)] = DbType.StringFixedLength;
-            typeMap[typeof(Guid)] = DbType.Guid;
-            typeMap[typeof(DateTime)] = DbType.DateTime;
-            typeMap[typeof(DateTimeOffset)] = DbType.DateTimeOffset;
-            typeMap[typeof(byte[])] = DbType.Binary;
-            typeMap[typeof(byte?)] = DbType.Byte;
-            typeMap[typeof(sbyte?)] = DbType.SByte;
-            typeMap[typeof(short?)] = DbType.Int16;
-            typeMap[typeof(ushort?)] = DbType.UInt16;
-            typeMap[typeof(int?)] = DbType.Int32;
-            typeMap[typeof(uint?)] = DbType.UInt32;
-            typeMap[typeof(long?)] = DbType.Int64;
-            typeMap[typeof(ulong?)] = DbType.UInt64;
-            typeMap[typeof(float?)] = DbType.Single;
-            typeMap[typeof(double?)] = DbType.Double;
-            typeMap[typeof(decimal?)] = DbType.Decimal;
-            typeMap[typeof(bool?)] = DbType.Boolean;
-            typeMap[typeof(char?)] = DbType.StringFixedLength;
-            typeMap[typeof(Guid?)] = DbType.Guid;
-            typeMap[typeof(DateTime?)] = DbType.DateTime;
-            typeMap[typeof(DateTimeOffset?)] = DbType.DateTimeOffset;
-            typeMap[typeof(System.Data.Linq.Binary)] = DbType.Binary;
+            typeMap = new Dictionary<Type, DbType>
+            {
+                [typeof(byte)] = DbType.Byte,
+                [typeof(sbyte)] = DbType.SByte,
+                [typeof(short)] = DbType.Int16,
+                [typeof(ushort)] = DbType.UInt16,
+                [typeof(int)] = DbType.Int32,
+                [typeof(uint)] = DbType.UInt32,
+                [typeof(long)] = DbType.Int64,
+                [typeof(ulong)] = DbType.UInt64,
+                [typeof(float)] = DbType.Single,
+                [typeof(double)] = DbType.Double,
+                [typeof(decimal)] = DbType.Decimal,
+                [typeof(bool)] = DbType.Boolean,
+                [typeof(string)] = DbType.String,
+                [typeof(char)] = DbType.StringFixedLength,
+                [typeof(Guid)] = DbType.Guid,
+                [typeof(DateTime)] = DbType.DateTime,
+                [typeof(DateTimeOffset)] = DbType.DateTimeOffset,
+                [typeof(byte[])] = DbType.Binary,
+                [typeof(byte?)] = DbType.Byte,
+                [typeof(sbyte?)] = DbType.SByte,
+                [typeof(short?)] = DbType.Int16,
+                [typeof(ushort?)] = DbType.UInt16,
+                [typeof(int?)] = DbType.Int32,
+                [typeof(uint?)] = DbType.UInt32,
+                [typeof(long?)] = DbType.Int64,
+                [typeof(ulong?)] = DbType.UInt64,
+                [typeof(float?)] = DbType.Single,
+                [typeof(double?)] = DbType.Double,
+                [typeof(decimal?)] = DbType.Decimal,
+                [typeof(bool?)] = DbType.Boolean,
+                [typeof(char?)] = DbType.StringFixedLength,
+                [typeof(Guid?)] = DbType.Guid,
+                [typeof(DateTime?)] = DbType.DateTime,
+                [typeof(DateTimeOffset?)] = DbType.DateTimeOffset,
+                [typeof(System.Data.Linq.Binary)] = DbType.Binary
+            };
         }
 
         private static DbType LookupDbType(Type type, string name)
         {
             DbType dbType;
             var nullUnderlyingType = Nullable.GetUnderlyingType(type);
-            if (nullUnderlyingType != null) type = nullUnderlyingType;
-            if (type.IsEnum)
-            {
-                type = Enum.GetUnderlyingType(type);
-            }
-            if (typeMap.TryGetValue(type, out dbType))
-            {
-                return dbType;
-            }
-            if (typeof(IEnumerable).IsAssignableFrom(type))
-            {
-                // use xml to denote its a list, hacky but will work on any DB
-                return DbType.Xml;
-            }
 
+            if (nullUnderlyingType != null)
+                type = nullUnderlyingType;
+
+            if (type.IsEnum)
+                type = Enum.GetUnderlyingType(type);
+
+            if (typeMap.TryGetValue(type, out dbType))
+                return dbType;
+
+            if (typeof(IEnumerable).IsAssignableFrom(type))
+                return DbType.Xml;
 
             throw new NotSupportedException(string.Format("The member {0} of type {1} cannot be used as a parameter value", name, type));
         }
@@ -731,7 +739,7 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
 
         static IEnumerable<TReturn> MultiMapImpl<TFirst, TSecond, TThird, TFourth, TFifth, TReturn>(this IDbConnection cnn, string sql, object map, object param, IDbTransaction transaction, string splitOn, int? commandTimeout, CommandType? commandType, IDataReader reader, Identity identity)
         {
-            identity = identity ?? new Identity(sql, commandType, cnn, typeof(TFirst), (object)param == null ? null : ((object)param).GetType(), new[] { typeof(TFirst), typeof(TSecond), typeof(TThird), typeof(TFourth), typeof(TFifth) });
+            identity = identity ?? new Identity(sql, commandType, cnn, typeof(TFirst), param == null ? null : param.GetType(), new[] { typeof(TFirst), typeof(TSecond), typeof(TThird), typeof(TFourth), typeof(TFifth) });
             CacheInfo cinfo = GetCacheInfo(identity);
 
             IDbCommand ownedCommand = null;
@@ -741,7 +749,7 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
             {
                 if (reader == null)
                 {
-                    ownedCommand = SetupCommand(cnn, transaction, sql, cinfo.ParamReader, (object)param, commandTimeout, commandType);
+                    ownedCommand = SetupCommand(cnn, transaction, sql, cinfo.ParamReader, param, commandTimeout, commandType);
                     ownedReader = ownedCommand.ExecuteReader();
                     reader = ownedReader;
                 }

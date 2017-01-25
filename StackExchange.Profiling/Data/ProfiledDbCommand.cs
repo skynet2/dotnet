@@ -15,7 +15,7 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// The bind by name cache.
         /// </summary>
-        private static Link<Type, Action<IDbCommand, bool>> bindByNameCache;
+        private static Link<Type, Action<IDbCommand, bool>> _bindByNameCache;
 
         /// <summary>
         /// The command.
@@ -56,16 +56,16 @@ namespace StackExchange.Profiling.Data
 
             set
             {
-                if (_bindByName != value)
-                {
-                    if (_command != null)
-                    {
-                        var inner = GetBindByName(_command.GetType());
-                        if (inner != null) inner(_command, value);
-                    }
+                if (_bindByName == value)
+                    return;
 
-                    _bindByName = value;
+                if (_command != null)
+                {
+                    var inner = GetBindByName(_command.GetType());
+                    inner?.Invoke(_command, value);
                 }
+
+                _bindByName = value;
             }
         }
 
@@ -77,7 +77,7 @@ namespace StackExchange.Profiling.Data
         /// <param name="profiler">The profiler.</param>
         public ProfiledDbCommand(DbCommand command, DbConnection connection, IDbProfiler profiler)
         {
-            if (command == null) throw new ArgumentNullException("command");
+            if (command == null) throw new ArgumentNullException(nameof(command));
 
             _command = command;
             _connection = connection;
@@ -97,7 +97,7 @@ namespace StackExchange.Profiling.Data
         {
             if (commandType == null) return null; // GIGO
             Action<IDbCommand, bool> action;
-            if (Link<Type, Action<IDbCommand, bool>>.TryGet(bindByNameCache, commandType, out action))
+            if (Link<Type, Action<IDbCommand, bool>>.TryGet(_bindByNameCache, commandType, out action))
             {
                 return action;
             }
@@ -121,7 +121,7 @@ namespace StackExchange.Profiling.Data
             }
             
             // cache it            
-            Link<Type, Action<IDbCommand, bool>>.TryAdd(ref bindByNameCache, commandType, ref action);
+            Link<Type, Action<IDbCommand, bool>>.TryAdd(ref _bindByNameCache, commandType, ref action);
             return action;
         }
 
@@ -180,10 +180,7 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the database parameter collection.
         /// </summary>
-        protected override DbParameterCollection DbParameterCollection
-        {
-            get { return _command.Parameters; }
-        }
+        protected override DbParameterCollection DbParameterCollection => _command.Parameters;
 
         /// <summary>
         /// Gets or sets the database transaction.
@@ -347,24 +344,18 @@ namespace StackExchange.Profiling.Data
         /// <param name="disposing">false if this is being disposed in a <c>finalizer</c>.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && _command != null)
-            {
-                _command.Dispose();
-            }
+            if (disposing)
+                _command?.Dispose();
+
             _command = null;
+
             base.Dispose(disposing);
         }
 
         /// <summary>
         /// Gets the internal command.
         /// </summary>
-        public DbCommand InternalCommand
-        {
-            get
-            {
-                return _command;
-            }
-        }
+        public DbCommand InternalCommand => _command;
 
         /// <summary>
         /// clone the command, entity framework expects this behaviour.

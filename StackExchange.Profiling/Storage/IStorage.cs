@@ -49,7 +49,6 @@ namespace StackExchange.Profiling.Storage
         /// </summary>
         /// <param name="profiler">The results of a profiling session.</param>
         /// <remarks>
-        /// Should also ensure the profiler is stored as being un-viewed by its profiling <see cref="MiniProfiler.User"/>.
         /// </remarks>
         void Save(MiniProfiler profiler);
 
@@ -57,10 +56,6 @@ namespace StackExchange.Profiling.Storage
         /// Returns a <see cref="MiniProfiler"/> from storage based on <paramref name="id"/>, 
         /// which should map to <see cref="MiniProfiler.Id"/>.
         /// </summary>
-        /// <remarks>
-        /// Should also update that the resulting profiler has been marked as viewed by its 
-        /// profiling <see cref="MiniProfiler.User"/>.
-        /// </remarks>
         MiniProfiler Load(Guid id);
 
         /// <summary>

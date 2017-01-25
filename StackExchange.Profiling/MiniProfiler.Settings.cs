@@ -49,8 +49,10 @@ namespace StackExchange.Profiling
 
                 try
                 {
-                    List<string> files = new List<string>();
-                    files.Add(location);
+                    var files = new List<string>
+                    {
+                        location
+                    };
 
                     using (var sha256 = new System.Security.Cryptography.SHA256CryptoServiceProvider())
                     {
@@ -65,7 +67,7 @@ namespace StackExchange.Profiling
                                 hash[i] = (byte)(hashfile[i] ^ hash[i]);
                             }
                         }
-                        Version = System.Convert.ToBase64String(hash);
+                        Version = Convert.ToBase64String(hash);
                     }
                 }
                 catch
@@ -110,28 +112,19 @@ namespace StackExchange.Profiling
             /// Assemblies to exclude from the stack trace report.
             /// Add to this using the <see cref="ExcludeAssembly"/> method.
             /// </summary>
-            public static IEnumerable<string> AssembliesToExclude
-            {
-                get { return assembliesToExclude; }
-            }
+            public static IEnumerable<string> AssembliesToExclude => assembliesToExclude;
 
             /// <summary>
             /// Types to exclude from the stack trace report.
             /// Add to this using the <see cref="ExcludeType"/> method.
             /// </summary>
-            public static IEnumerable<string> TypesToExclude
-            {
-                get { return typesToExclude; }
-            }
+            public static IEnumerable<string> TypesToExclude => typesToExclude;
 
             /// <summary>
             /// Methods to exclude from the stack trace report.
             /// Add to this using the <see cref="ExcludeMethod"/> method.
             /// </summary>
-            public static IEnumerable<string> MethodsToExclude
-            {
-                get { return methodsToExclude; }
-            }
+            public static IEnumerable<string> MethodsToExclude => methodsToExclude;
 
             /// <summary>
             /// Excludes the specified assembly from the stack trace output.
@@ -208,7 +201,7 @@ namespace StackExchange.Profiling
             /// 7) page is displayed and profiling results are ajax-fetched down, pulling cached results from 
             ///    <see cref="Storage"/>'s implementation of <see cref="StackExchange.Profiling.Storage.IStorage.Load"/>
             /// </remarks>
-            public static Storage.IStorage Storage { get; set; }
+            public static IStorage Storage { get; set; }
 
             /// <summary>
             /// The formatter applied to any SQL before being set in a <see cref="CustomTiming.CommandString"/>.
@@ -242,7 +235,7 @@ namespace StackExchange.Profiling
             {
                 if (Storage == null)
                 {
-                    Storage = new Storage.HttpRuntimeCacheStorage(TimeSpan.FromDays(1));
+                    Storage = new HttpRuntimeCacheStorage(TimeSpan.FromDays(1));
                 }
             }
 

@@ -94,7 +94,7 @@ namespace StackExchange.Profiling
         /// </summary>
         [ScriptIgnore]
         public string CustomTimingsJson {
-            get { return CustomTimings != null ? CustomTimings.ToJson() : null; }
+            get { return CustomTimings?.ToJson(); }
             set { CustomTimings = value.FromJson<Dictionary<string, List<CustomTiming>>>(); }
         }
         
@@ -147,28 +147,19 @@ namespace StackExchange.Profiling
         /// <see cref="MiniProfiler.Settings.TrivialDurationThresholdMilliseconds"/>, by default 2.0 ms.
         /// </summary>
         [ScriptIgnore]
-        public bool IsTrivial
-        {
-            get { return DurationWithoutChildrenMilliseconds <= MiniProfiler.Settings.TrivialDurationThresholdMilliseconds; }
-        }
+        public bool IsTrivial => DurationWithoutChildrenMilliseconds <= MiniProfiler.Settings.TrivialDurationThresholdMilliseconds;
 
         /// <summary>
         /// Gets a value indicating whether this Timing has inner Timing steps.
         /// </summary>
         [ScriptIgnore]
-        public bool HasChildren
-        {
-            get { return Children != null && Children.Count > 0; }
-        }
+        public bool HasChildren => Children != null && Children.Count > 0;
 
         /// <summary>
         /// Gets a value indicating whether this Timing is the first one created in a MiniProfiler session.
         /// </summary>
         [ScriptIgnore]
-        public bool IsRoot
-        {
-            get { return Equals(Profiler.Root); }
-        }
+        public bool IsRoot => Equals(Profiler.Root);
 
         /// <summary>
         /// Gets a value indicating whether how far away this Timing is from the Profiler's Root.
@@ -275,10 +266,7 @@ namespace StackExchange.Profiling
 
         internal void RemoveChild(Timing timing)
         {
-            if (Children != null)
-            {
-                Children.Remove(timing);
-            }
+            Children?.Remove(timing);
         }
 
         /// <summary>

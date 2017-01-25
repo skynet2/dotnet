@@ -1,8 +1,5 @@
-﻿using System;
-using System.Linq;
-using System.Web;
+﻿using System.Web;
 using System.Web.Routing;
-using StackExchange.Profiling.Helpers;
 
 namespace StackExchange.Profiling
 {
@@ -11,7 +8,7 @@ namespace StackExchange.Profiling
     /// The current profiler is associated with a HttpContext.Current ensuring that profilers are 
     /// specific to a individual HttpRequest.
     /// </summary>
-    public partial class WebRequestProfilerProvider : BaseProfilerProvider
+    public class WebRequestProfilerProvider : BaseProfilerProvider
     {
         /// <summary>
         /// Starts a new MiniProfiler and associates it with the current <see cref="HttpContext.Current"/>.
