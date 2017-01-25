@@ -20,7 +20,7 @@ namespace StackExchange.Profiling
         /// <summary>
         /// Holds the maximum size that will be stored for byte[] parameters
         /// </summary>
-        private const int MaxByteParameterSize = 512;
+        private const int MaxByteParameterSize = int.MaxValue;
 
         private readonly CustomTiming _customTiming;
         private List<SqlTimingParameter> Parameters { get; set; }

@@ -16,30 +16,9 @@ namespace StackExchange.Profiling
         /// Obsolete - used for serialization.
         /// </summary>
         [Obsolete("Used for serialization")]
-        public Suppression()
+        public Suppression(bool wasSuppressed)
         {
-
-        }
-
-        /// <summary>
-        /// Initialises a new instance of the <see cref="Suppression"/> class. 
-        /// Creates a new Suppression to deactive profiling while alive
-        /// </summary>
-        public Suppression(MiniProfiler profiler)
-        {
-            if (profiler == null)
-            {
-                throw new ArgumentNullException(nameof(profiler));
-            }
-
-            Profiler = profiler;
-            if (!Profiler.IsActive)
-            {
-                return;
-            }
-
-            Profiler.IsActive = false;
-            _wasSuppressed = true;
+            _wasSuppressed = wasSuppressed;
         }
 
         /// <summary>

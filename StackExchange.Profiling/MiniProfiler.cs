@@ -224,34 +224,6 @@ namespace StackExchange.Profiling
         {
             Settings.ProfilerProvider.Stop(discardResults);
         }
-
-        /// <summary>
-        /// Returns an <see cref="IDisposable"/> that will time the code between its creation and disposal. Use this method when you
-        /// do not wish to include the StackExchange.Profiling namespace for the <see cref="MiniProfilerExtensions.Step(MiniProfiler,string)"/> extension method.
-        /// </summary>
-        /// <param name="name">A descriptive name for the code that is encapsulated by the resulting IDisposable's lifetime.</param>
-        /// <returns>the static step.</returns>
-        public static IDisposable StepStatic(string name)
-        {
-            return Current.Step(name);
-        }
-
-        /// <summary>
-        /// Renders the current <see cref="MiniProfiler"/> to JSON.
-        /// </summary>
-        public static string ToJson()
-        {
-            return ToJson(Current);
-        }
-
-        /// <summary>
-        /// Renders the parameter <see cref="MiniProfiler"/> to JSON.
-        /// </summary>
-        public static string ToJson(MiniProfiler profiler)
-        {
-            return profiler == null ? null : GetJsonSerializer().Serialize(profiler);
-        }
-
         private static JavaScriptSerializer GetJsonSerializer()
         {
             return new JavaScriptSerializer { MaxJsonLength = Settings.MaxJsonResponseSize };
@@ -303,21 +275,6 @@ namespace StackExchange.Profiling
 
                 for (int i = children.Count - 1; i >= 0; i--)
                     timings.Push(children[i]);
-            }
-        }
-
-        /// <summary>
-        /// Create a DEEP clone of this MiniProfiler.
-        /// </summary>
-        public MiniProfiler Clone()
-        {
-            var serializer = new DataContractSerializer(typeof(MiniProfiler), null, int.MaxValue, false, true, null);
-
-            using (var ms = new MemoryStream())
-            {
-                serializer.WriteObject(ms, this);
-                ms.Position = 0;
-                return (MiniProfiler)serializer.ReadObject(ms);
             }
         }
 

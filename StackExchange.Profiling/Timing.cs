@@ -130,13 +130,11 @@ namespace StackExchange.Profiling
             {
                 var result = DurationMilliseconds.GetValueOrDefault();
 
-                if (HasChildren)
-                {
-                    foreach (var child in Children)
-                    {
-                        result -= child.DurationMilliseconds.GetValueOrDefault();
-                    }
-                }
+                if (!HasChildren)
+                    return Math.Round(result, 1);
+
+                foreach (var child in Children)
+                    result -= child.DurationMilliseconds.GetValueOrDefault();
 
                 return Math.Round(result, 1);
             }
@@ -226,13 +224,14 @@ namespace StackExchange.Profiling
             DurationMilliseconds = Profiler.GetDurationMilliseconds(_startTicks);
             Profiler.Head = ParentTiming;
 
-            if (_minSaveMs.HasValue && _minSaveMs.Value > 0 && ParentTiming != null)
+            if (!_minSaveMs.HasValue || _minSaveMs.Value <= 0 || ParentTiming == null)
+                return;
+
+            var compareMs = _includeChildrenWithMinSave ? DurationMilliseconds : DurationWithoutChildrenMilliseconds;
+
+            if (compareMs < _minSaveMs.Value)
             {
-                var compareMs = _includeChildrenWithMinSave ? DurationMilliseconds : DurationWithoutChildrenMilliseconds;
-                if (compareMs < _minSaveMs.Value)
-                {
-                    ParentTiming.RemoveChild(this);
-                }
+                ParentTiming.RemoveChild(this);
             }
         }
 
@@ -301,14 +300,16 @@ namespace StackExchange.Profiling
             }
 
             List<CustomTiming> result;
+
             lock (CustomTimings)
             {
-                if (!CustomTimings.TryGetValue(category, out result))
-                {
-                    result = new List<CustomTiming>();
-                    CustomTimings[category] = result;
-                }
+                if (CustomTimings.TryGetValue(category, out result))
+                    return result;
+
+                result = new List<CustomTiming>();
+                CustomTimings[category] = result;
             }
+
             return result;
         }
     }
