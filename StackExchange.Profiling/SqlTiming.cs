@@ -43,6 +43,8 @@ namespace StackExchange.Profiling
 
             if (_customTiming == null)
                 throw new InvalidOperationException();
+
+            _customTiming.Parameters = Parameters;
         }
 
         /// <summary>

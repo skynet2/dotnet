@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace StackExchange.Profiling
@@ -48,7 +49,10 @@ namespace StackExchange.Profiling
         /// </summary>
         [DataMember(Order = 1)]
         public Guid Id { get; }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        public List<SqlTimingParameter> Parameters { get; set; }
         /// <summary>
         /// Gets or sets the command that was executed, e.g. "select * from Table" or "INCR my:redis:key"
         /// </summary>
