@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Data;
 using System.Text.RegularExpressions;
 using StackExchange.Profiling.Helpers;
 
@@ -11,7 +10,7 @@ namespace StackExchange.Profiling.SqlFormatters
     public class InlineFormatter : ISqlFormatter
     {
         private static readonly Regex ParamPrefixes = new Regex(@"[@:?].+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static bool includeTypeInfo;
+        private static bool _includeTypeInfo;
 
         /// <summary>
         /// Creates a new Inline SQL Formatter, optionally including the parameter type info 
@@ -22,7 +21,7 @@ namespace StackExchange.Profiling.SqlFormatters
         /// </param>
         public InlineFormatter(bool includeTypeInfo = false)
         {
-            InlineFormatter.includeTypeInfo = includeTypeInfo;
+            InlineFormatter._includeTypeInfo = includeTypeInfo;
         }
 
         /// <summary>
@@ -45,7 +44,7 @@ namespace StackExchange.Profiling.SqlFormatters
                 if (name.HasValue())
                 {
                     var value = GetParameterValue(p);
-                    commandText = Regex.Replace(commandText, "(" + name + ")([^0-9A-z]|$)", m => value + m.Groups[2], RegexOptions.IgnoreCase);
+                    commandText = Regex.Replace(commandText, "(" + name + ")([^0-9A-z]|$)", m => value.ToString() + m.Groups[2], RegexOptions.IgnoreCase);
                 }
             }
 
@@ -55,7 +54,7 @@ namespace StackExchange.Profiling.SqlFormatters
         /// <summary>
         /// Returns a string representation of the parameter's value, including the type
         /// </summary>
-        public string GetParameterValue(SqlTimingParameter p)
+        public object GetParameterValue(SqlTimingParameter p)
         {
             // TODO: ugh, figure out how to allow different db providers to specify how values are represented (e.g. bit in oracle)
             var result = p.Value;
@@ -65,10 +64,10 @@ namespace StackExchange.Profiling.SqlFormatters
             {
                 case "string":
                 case "datetime":
-                    result = string.Format("'{0}'", result);
+                    result = $"'{result}'";
                     break;
                 case "boolean":
-                    switch (result)
+                    switch ((string)result)
                     {
                         case "True":
                             result = "1";
@@ -87,7 +86,7 @@ namespace StackExchange.Profiling.SqlFormatters
             {
                 result = "null";
             }
-            if (includeTypeInfo)
+            if (_includeTypeInfo)
             {
                 result += " /* " + p.Name + " DbType." + p.DbType + " */";
             }

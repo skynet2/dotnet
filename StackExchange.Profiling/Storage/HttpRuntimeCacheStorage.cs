@@ -115,7 +115,6 @@ namespace StackExchange.Profiling.Storage
 
         /// <summary>
         /// Returns the saved <see cref="MiniProfiler"/> identified by <paramref name="id"/>. Also marks the resulting
-        /// profiler <see cref="MiniProfiler.HasUserViewed"/> to true.
         /// </summary>
         public MiniProfiler Load(Guid id)
         {

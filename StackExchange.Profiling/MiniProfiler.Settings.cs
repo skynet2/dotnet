@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Web;
@@ -171,7 +170,7 @@ namespace StackExchange.Profiling
             [DefaultValue(2.0)]
             public static decimal TrivialDurationThresholdMilliseconds { get; set; }
 
-  
+
             /// <summary>
             /// By default, <see cref="CustomTiming"/>s created by this assmebly will grab a stack trace to help 
             /// locate where Remote Procedure Calls are being executed.  When this setting is true, no stack trace 
@@ -206,8 +205,13 @@ namespace StackExchange.Profiling
             /// <summary>
             /// The formatter applied to any SQL before being set in a <see cref="CustomTiming.CommandString"/>.
             /// </summary>
-            public static ISqlFormatter SqlFormatter { get; set; }
+            public static ISqlFormatter SqlFormatter
+            {
+                get { return _sqlFormatter ?? (_sqlFormatter = new VerboseSqlServerFormatter()); }
+                set { _sqlFormatter = value; }
+            }
 
+            private static ISqlFormatter _sqlFormatter;
             /// <summary>
             /// Assembly version of this dank MiniProfiler.
             /// </summary>

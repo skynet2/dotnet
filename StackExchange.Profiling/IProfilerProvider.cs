@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace StackExchange.Profiling
+﻿namespace StackExchange.Profiling
 {
 
     /// <summary>

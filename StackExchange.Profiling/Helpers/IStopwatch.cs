@@ -60,26 +60,17 @@ namespace StackExchange.Profiling.Helpers
         /// <summary>
         /// Gets the elapsed ticks.
         /// </summary>
-        public long ElapsedTicks
-        {
-            get { return _stopwatch.ElapsedTicks; }
-        }
+        public long ElapsedTicks => _stopwatch.ElapsedTicks;
 
         /// <summary>
         /// Gets the frequency.
         /// </summary>
-        public long Frequency
-        {
-            get { return Stopwatch.Frequency; }
-        }
+        public long Frequency => Stopwatch.Frequency;
 
         /// <summary>
         /// Gets a value indicating whether is running.
         /// </summary>
-        public bool IsRunning
-        {
-            get { return _stopwatch.IsRunning; }
-        }
+        public bool IsRunning => _stopwatch.IsRunning;
 
         /// <summary>
         /// stop the timer.

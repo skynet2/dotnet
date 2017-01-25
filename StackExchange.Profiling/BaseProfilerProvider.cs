@@ -36,7 +36,7 @@ namespace StackExchange.Profiling
         protected static void SetProfilerActive(MiniProfiler profiler)
         {
             if (profiler == null)
-                throw new ArgumentNullException("profiler");
+                throw new ArgumentNullException(nameof(profiler));
 
             profiler.IsActive = true;
         }
@@ -49,7 +49,7 @@ namespace StackExchange.Profiling
         protected static bool StopProfiler(MiniProfiler profiler)
         {
             if (profiler == null)
-                throw new ArgumentNullException("profiler");
+                throw new ArgumentNullException(nameof(profiler));
 
             if (!profiler.StopImpl())
                 return false;

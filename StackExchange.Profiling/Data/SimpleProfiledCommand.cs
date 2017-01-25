@@ -39,7 +39,7 @@ namespace StackExchange.Profiling.Data
         /// <param name="profiler">The profiler to use</param>
         public SimpleProfiledCommand(IDbCommand command, IDbConnection connection, IDbProfiler profiler)
         {
-            if (command == null) throw new ArgumentNullException("command");
+            if (command == null) throw new ArgumentNullException(nameof(command));
 
             _command = command;
             _connection = connection;
@@ -216,10 +216,7 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the parameters.
         /// </summary>
-        public IDataParameterCollection Parameters
-        {
-            get { return _command.Parameters; }
-        }
+        public IDataParameterCollection Parameters => _command.Parameters;
 
         /// <summary>
         /// Gets or sets the updated row source.

@@ -118,9 +118,9 @@ namespace StackExchange.Profiling.Helpers.Dapper
                 Value = value;
                 Tail = tail;
             }
-            public TKey Key { get; private set; }
-            public TValue Value { get; private set; }
-            public Link<TKey, TValue> Tail { get; private set; }
+            public TKey Key { get; }
+            public TValue Value { get; }
+            public Link<TKey, TValue> Tail { get; }
         }
 
         private class CacheInfo
@@ -128,9 +128,9 @@ namespace StackExchange.Profiling.Helpers.Dapper
             public Func<IDataReader, object> Deserializer { get; set; }
             public Func<IDataReader, object>[] OtherDeserializers { get; set; }
             public Action<IDbCommand, object> ParamReader { get; set; }
-            private int hitCount;
-            public int GetHitCount() { return Interlocked.CompareExchange(ref hitCount, 0, 0); }
-            public void RecordHit() { Interlocked.Increment(ref hitCount); }
+            private int _hitCount;
+            public int GetHitCount() { return Interlocked.CompareExchange(ref _hitCount, 0, 0); }
+            public void RecordHit() { Interlocked.Increment(ref _hitCount); }
         }
 
         /// <summary>
@@ -163,41 +163,41 @@ namespace StackExchange.Profiling.Helpers.Dapper
             OnQueryCachePurged();
         }
 #else
-        static readonly System.Collections.Concurrent.ConcurrentDictionary<Identity, CacheInfo> _queryCache = new System.Collections.Concurrent.ConcurrentDictionary<Identity, CacheInfo>();
+        static readonly System.Collections.Concurrent.ConcurrentDictionary<Identity, CacheInfo> QueryCache = new System.Collections.Concurrent.ConcurrentDictionary<Identity, CacheInfo>();
         private static void SetQueryCache(Identity key, CacheInfo value)
         {
-            if (Interlocked.Increment(ref collect) == COLLECT_PER_ITEMS)
+            if (Interlocked.Increment(ref _collect) == CollectPerItems)
             {
                 CollectCacheGarbage();
             }
-            _queryCache[key] = value;
+            QueryCache[key] = value;
         }
 
         private static void CollectCacheGarbage()
         {
             try
             {
-                foreach (var pair in _queryCache)
+                foreach (var pair in QueryCache)
                 {
-                    if (pair.Value.GetHitCount() > COLLECT_HIT_COUNT_MIN)
+                    if (pair.Value.GetHitCount() > CollectHitCountMin)
                         continue;
 
                     CacheInfo cache;
-                    _queryCache.TryRemove(pair.Key, out cache);
+                    QueryCache.TryRemove(pair.Key, out cache);
                 }
             }
 
             finally
             {
-                Interlocked.Exchange(ref collect, 0);
+                Interlocked.Exchange(ref _collect, 0);
             }
         }
 
-        private const int COLLECT_PER_ITEMS = 1000, COLLECT_HIT_COUNT_MIN = 0;
-        private static int collect;
+        private const int CollectPerItems = 1000, CollectHitCountMin = 0;
+        private static int _collect;
         private static bool TryGetQueryCache(Identity key, out CacheInfo value)
         {
-            if (_queryCache.TryGetValue(key, out value))
+            if (QueryCache.TryGetValue(key, out value))
             {
                 value.RecordHit();
                 return true;
@@ -211,7 +211,7 @@ namespace StackExchange.Profiling.Helpers.Dapper
         /// </summary>
         public static void PurgeQueryCache()
         {
-            _queryCache.Clear();
+            QueryCache.Clear();
             OnQueryCachePurged();
         }
 
@@ -219,9 +219,9 @@ namespace StackExchange.Profiling.Helpers.Dapper
         /// Return a count of all the cached queries by dapper
         /// </summary>
         /// <returns></returns>
-        public static int GetCachedSQLCount()
+        public static int GetCachedSqlCount()
         {
-            return _queryCache.Count;
+            return QueryCache.Count;
         }
 
         /// <summary>
@@ -229,9 +229,9 @@ namespace StackExchange.Profiling.Helpers.Dapper
         /// </summary>
         /// <param name="ignoreHitCountAbove"></param>
         /// <returns></returns>
-        public static IEnumerable<Tuple<string, string, int>> GetCachedSQL(int ignoreHitCountAbove = int.MaxValue)
+        public static IEnumerable<Tuple<string, string, int>> GetCachedSql(int ignoreHitCountAbove = int.MaxValue)
         {
-            var data = _queryCache.Select(pair => Tuple.Create(pair.Key.connectionString, pair.Key.sql, pair.Value.GetHitCount()));
+            var data = QueryCache.Select(pair => Tuple.Create(pair.Key.ConnectionString, pair.Key.Sql, pair.Value.GetHitCount()));
 
             if (ignoreHitCountAbove < int.MaxValue)
                 data = data.Where(tuple => tuple.Item3 <= ignoreHitCountAbove);
@@ -246,16 +246,16 @@ namespace StackExchange.Profiling.Helpers.Dapper
         public static IEnumerable<Tuple<int, int>> GetHashCollissions()
         {
             var counts = new Dictionary<int, int>();
-            foreach (var key in _queryCache.Keys)
+            foreach (var key in QueryCache.Keys)
             {
                 int count;
-                if (!counts.TryGetValue(key.hashCode, out count))
+                if (!counts.TryGetValue(key.HashCode, out count))
                 {
-                    counts.Add(key.hashCode, 1);
+                    counts.Add(key.HashCode, 1);
                 }
                 else
                 {
-                    counts[key.hashCode] = count + 1;
+                    counts[key.HashCode] = count + 1;
                 }
             }
             return from pair in counts
@@ -266,11 +266,11 @@ namespace StackExchange.Profiling.Helpers.Dapper
 #endif
 
 
-        static readonly Dictionary<Type, DbType> typeMap;
+        static readonly Dictionary<Type, DbType> TypeMap;
 
         static SqlMapper()
         {
-            typeMap = new Dictionary<Type, DbType>
+            TypeMap = new Dictionary<Type, DbType>
             {
                 [typeof(byte)] = DbType.Byte,
                 [typeof(sbyte)] = DbType.SByte,
@@ -321,13 +321,13 @@ namespace StackExchange.Profiling.Helpers.Dapper
             if (type.IsEnum)
                 type = Enum.GetUnderlyingType(type);
 
-            if (typeMap.TryGetValue(type, out dbType))
+            if (TypeMap.TryGetValue(type, out dbType))
                 return dbType;
 
             if (typeof(IEnumerable).IsAssignableFrom(type))
                 return DbType.Xml;
 
-            throw new NotSupportedException(string.Format("The member {0} of type {1} cannot be used as a parameter value", name, type));
+            throw new NotSupportedException($"The member {name} of type {type} cannot be used as a parameter value");
         }
 
         /// <summary>
@@ -337,12 +337,12 @@ namespace StackExchange.Profiling.Helpers.Dapper
         {
             internal Identity ForGrid(Type primaryType, int gridIndex)
             {
-                return new Identity(sql, commandType, connectionString, primaryType, parametersType, null, gridIndex);
+                return new Identity(Sql, CommandType, ConnectionString, primaryType, ParametersType, null, gridIndex);
             }
 
             internal Identity ForGrid(Type primaryType, Type[] otherTypes, int gridIndex)
             {
-                return new Identity(sql, commandType, connectionString, primaryType, parametersType, otherTypes, gridIndex);
+                return new Identity(Sql, CommandType, ConnectionString, primaryType, ParametersType, otherTypes, gridIndex);
             }
             /// <summary>
             /// Create an identity for use with DynamicParameters, internal use only
@@ -351,7 +351,7 @@ namespace StackExchange.Profiling.Helpers.Dapper
             /// <returns></returns>
             public Identity ForDynamicParameters(Type type)
             {
-                return new Identity(sql, commandType, connectionString, this.type, type, null, -1);
+                return new Identity(Sql, CommandType, ConnectionString, this._type, type, null, -1);
             }
 
             internal Identity(string sql, CommandType? commandType, IDbConnection connection, Type type, Type parametersType, Type[] otherTypes)
@@ -359,28 +359,28 @@ namespace StackExchange.Profiling.Helpers.Dapper
             { }
             private Identity(string sql, CommandType? commandType, string connectionString, Type type, Type parametersType, Type[] otherTypes, int gridIndex)
             {
-                this.sql = sql;
-                this.commandType = commandType;
-                this.connectionString = connectionString;
-                this.type = type;
-                this.parametersType = parametersType;
-                this.gridIndex = gridIndex;
+                this.Sql = sql;
+                this.CommandType = commandType;
+                this.ConnectionString = connectionString;
+                this._type = type;
+                this.ParametersType = parametersType;
+                this.GridIndex = gridIndex;
                 unchecked
                 {
-                    hashCode = 17; // we *know* we are using this in a dictionary, so pre-compute this
-                    hashCode = hashCode * 23 + commandType.GetHashCode();
-                    hashCode = hashCode * 23 + gridIndex.GetHashCode();
-                    hashCode = hashCode * 23 + (sql == null ? 0 : sql.GetHashCode());
-                    hashCode = hashCode * 23 + (type == null ? 0 : type.GetHashCode());
+                    HashCode = 17; // we *know* we are using this in a dictionary, so pre-compute this
+                    HashCode = HashCode * 23 + commandType.GetHashCode();
+                    HashCode = HashCode * 23 + gridIndex.GetHashCode();
+                    HashCode = HashCode * 23 + (sql?.GetHashCode() ?? 0);
+                    HashCode = HashCode * 23 + (type == null ? 0 : type.GetHashCode());
                     if (otherTypes != null)
                     {
                         foreach (var t in otherTypes)
                         {
-                            hashCode = hashCode * 23 + (t == null ? 0 : t.GetHashCode());
+                            HashCode = HashCode * 23 + (t == null ? 0 : t.GetHashCode());
                         }
                     }
-                    hashCode = hashCode * 23 + (connectionString == null ? 0 : connectionString.GetHashCode());
-                    hashCode = hashCode * 23 + (parametersType == null ? 0 : parametersType.GetHashCode());
+                    HashCode = HashCode * 23 + (connectionString?.GetHashCode() ?? 0);
+                    HashCode = HashCode * 23 + (parametersType == null ? 0 : parametersType.GetHashCode());
                 }
             }
 
@@ -396,32 +396,32 @@ namespace StackExchange.Profiling.Helpers.Dapper
             /// <summary>
             /// The sql
             /// </summary>
-            public readonly string sql;
+            public readonly string Sql;
             /// <summary>
             /// The command type 
             /// </summary>
-            public readonly CommandType? commandType;
+            public readonly CommandType? CommandType;
 
             /// <summary>
             /// 
             /// </summary>
-            public readonly int hashCode, gridIndex;
-            private readonly Type type;
+            public readonly int HashCode, GridIndex;
+            private readonly Type _type;
             /// <summary>
             /// 
             /// </summary>
-            public readonly string connectionString;
+            public readonly string ConnectionString;
             /// <summary>
             /// 
             /// </summary>
-            public readonly Type parametersType;
+            public readonly Type ParametersType;
             /// <summary>
             /// 
             /// </summary>
             /// <returns></returns>
             public override int GetHashCode()
             {
-                return hashCode;
+                return HashCode;
             }
             /// <summary>
             /// Compare 2 Identity objects
@@ -432,12 +432,12 @@ namespace StackExchange.Profiling.Helpers.Dapper
             {
                 return
                     other != null &&
-                    gridIndex == other.gridIndex &&
-                    type == other.type &&
-                    sql == other.sql &&
-                    commandType == other.commandType &&
-                    connectionString == other.connectionString &&
-                    parametersType == other.parametersType;
+                    GridIndex == other.GridIndex &&
+                    _type == other._type &&
+                    Sql == other.Sql &&
+                    CommandType == other.CommandType &&
+                    ConnectionString == other.ConnectionString &&
+                    ParametersType == other.ParametersType;
             }
         }
 
@@ -568,8 +568,9 @@ this IDbConnection cnn, string sql, dynamic param = null, IDbTransaction transac
             }
             catch
             {
-                if (reader != null) reader.Dispose();
-                if (cmd != null) cmd.Dispose();
+                reader?.Dispose();
+                cmd?.Dispose();
+
                 throw;
             }
         }
@@ -909,9 +910,9 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
             if (!TryGetQueryCache(identity, out info))
             {
                 info = new CacheInfo();
-                if (identity.parametersType != null)
+                if (identity.ParametersType != null)
                 {
-                    if (typeof(IDynamicParameters).IsAssignableFrom(identity.parametersType))
+                    if (typeof(IDynamicParameters).IsAssignableFrom(identity.ParametersType))
                     {
                         info.ParamReader = (cmd, obj) => { (obj as IDynamicParameters).AddParameters(cmd, identity); };
                     }
@@ -946,27 +947,27 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
 #if !CSHARP30
         private class FastExpando : System.Dynamic.DynamicObject, IDictionary<string, object>
         {
-            IDictionary<string, object> data;
+            IDictionary<string, object> _data;
 
             public static FastExpando Attach(IDictionary<string, object> data)
             {
-                return new FastExpando { data = data };
+                return new FastExpando { _data = data };
             }
 
             public override bool TrySetMember(System.Dynamic.SetMemberBinder binder, object value)
             {
-                data[binder.Name] = value;
+                _data[binder.Name] = value;
                 return true;
             }
 
             public override bool TryGetMember(System.Dynamic.GetMemberBinder binder, out object result)
             {
-                return data.TryGetValue(binder.Name, out result);
+                return _data.TryGetValue(binder.Name, out result);
             }
 
             public override IEnumerable<string> GetDynamicMemberNames()
             {
-                return data.Keys;
+                return _data.Keys;
             }
 
             #region IDictionary<string,object> Members
@@ -978,13 +979,10 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
 
             bool IDictionary<string, object>.ContainsKey(string key)
             {
-                return data.ContainsKey(key);
+                return _data.ContainsKey(key);
             }
 
-            ICollection<string> IDictionary<string, object>.Keys
-            {
-                get { return data.Keys; }
-            }
+            ICollection<string> IDictionary<string, object>.Keys => _data.Keys;
 
             bool IDictionary<string, object>.Remove(string key)
             {
@@ -993,27 +991,24 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
 
             bool IDictionary<string, object>.TryGetValue(string key, out object value)
             {
-                return data.TryGetValue(key, out value);
+                return _data.TryGetValue(key, out value);
             }
 
-            ICollection<object> IDictionary<string, object>.Values
-            {
-                get { return data.Values; }
-            }
+            ICollection<object> IDictionary<string, object>.Values => _data.Values;
 
             object IDictionary<string, object>.this[string key]
             {
                 get
                 {
-                    return data[key];
+                    return _data[key];
                 }
                 set
                 {
-                    if (!data.ContainsKey(key))
+                    if (!_data.ContainsKey(key))
                     {
                         throw new NotImplementedException();
                     }
-                    data[key] = value;
+                    _data[key] = value;
                 }
             }
 
@@ -1033,23 +1028,17 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
 
             bool ICollection<KeyValuePair<string, object>>.Contains(KeyValuePair<string, object> item)
             {
-                return data.Contains(item);
+                return _data.Contains(item);
             }
 
             void ICollection<KeyValuePair<string, object>>.CopyTo(KeyValuePair<string, object>[] array, int arrayIndex)
             {
-                data.CopyTo(array, arrayIndex);
+                _data.CopyTo(array, arrayIndex);
             }
 
-            int ICollection<KeyValuePair<string, object>>.Count
-            {
-                get { return data.Count; }
-            }
+            int ICollection<KeyValuePair<string, object>>.Count => _data.Count;
 
-            bool ICollection<KeyValuePair<string, object>>.IsReadOnly
-            {
-                get { return true; }
-            }
+            bool ICollection<KeyValuePair<string, object>>.IsReadOnly => true;
 
             bool ICollection<KeyValuePair<string, object>>.Remove(KeyValuePair<string, object> item)
             {
@@ -1062,7 +1051,7 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
 
             IEnumerator<KeyValuePair<string, object>> IEnumerable<KeyValuePair<string, object>>.GetEnumerator()
             {
-                return data.GetEnumerator();
+                return _data.GetEnumerator();
             }
 
             #endregion
@@ -1071,7 +1060,7 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
 
             IEnumerator IEnumerable.GetEnumerator()
             {
-                return data.GetEnumerator();
+                return _data.GetEnumerator();
             }
 
             #endregion
@@ -1119,9 +1108,9 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
         [Obsolete("This method is for internal usage only", false)]
         public static char ReadChar(object value)
         {
-            if (value == null || value is DBNull) throw new ArgumentNullException("value");
+            if (value == null || value is DBNull) throw new ArgumentNullException(nameof(value));
             string s = value as string;
-            if (s == null || s.Length != 1) throw new ArgumentException("A single-character was expected", "value");
+            if (s == null || s.Length != 1) throw new ArgumentException("A single-character was expected", nameof(value));
             return s[0];
         }
 
@@ -1134,7 +1123,7 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
         {
             if (value == null || value is DBNull) return null;
             string s = value as string;
-            if (s == null || s.Length != 1) throw new ArgumentException("A single-character was expected", "value");
+            if (s == null || s.Length != 1) throw new ArgumentException("A single-character was expected", nameof(value));
             return s[0];
         }
         /// <summary>
@@ -1201,10 +1190,10 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
         /// </summary>
         public static Action<IDbCommand, object> CreateParamInfoGenerator(Identity identity)
         {
-            Type type = identity.parametersType;
-            bool filterParams = identity.commandType.GetValueOrDefault(CommandType.Text) == CommandType.Text;
+            Type type = identity.ParametersType;
+            bool filterParams = identity.CommandType.GetValueOrDefault(CommandType.Text) == CommandType.Text;
 
-            var dm = new DynamicMethod(string.Format("ParamInfo{0}", Guid.NewGuid()), null, new[] { typeof(IDbCommand), typeof(object) }, type, true);
+            var dm = new DynamicMethod($"ParamInfo{Guid.NewGuid()}", null, new[] { typeof(IDbCommand), typeof(object) }, type, true);
 
             var il = dm.GetILGenerator();
 
@@ -1220,14 +1209,14 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
             IEnumerable<PropertyInfo> props = type.GetProperties().OrderBy(p => p.Name);
             if (filterParams)
             {
-                props = FilterParameters(props, identity.sql);
+                props = FilterParameters(props, identity.Sql);
             }
             foreach (var prop in props)
             {
                 if (filterParams)
                 {
-                    if (identity.sql.IndexOf("@" + prop.Name, StringComparison.InvariantCultureIgnoreCase) < 0
-                        && identity.sql.IndexOf(":" + prop.Name, StringComparison.InvariantCultureIgnoreCase) < 0)
+                    if (identity.Sql.IndexOf("@" + prop.Name, StringComparison.InvariantCultureIgnoreCase) < 0
+                        && identity.Sql.IndexOf(":" + prop.Name, StringComparison.InvariantCultureIgnoreCase) < 0)
                     { // can't see the parameter in the text (even in a comment, etc) - burn it with fire
                         continue;
                     }
@@ -1388,11 +1377,11 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
 #pragma warning disable 618
             if (type == typeof(char))
             { // this *does* need special handling, though
-                return r => SqlMapper.ReadChar(r.GetValue(index));
+                return r => ReadChar(r.GetValue(index));
             }
             if (type == typeof(char?))
             {
-                return r => SqlMapper.ReadNullableChar(r.GetValue(index));
+                return r => ReadNullableChar(r.GetValue(index));
             }
             if (type == typeof(System.Data.Linq.Binary))
             {
@@ -1407,8 +1396,8 @@ this IDbConnection cnn, string sql, Func<TFirst, TSecond, TThird, TFourth, TRetu
         }
 
         static readonly MethodInfo
-                    enumParse = typeof(Enum).GetMethod("Parse", new Type[] { typeof(Type), typeof(string), typeof(bool) }),
-                    getItem = typeof(IDataRecord).GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                    EnumParse = typeof(Enum).GetMethod("Parse", new Type[] { typeof(Type), typeof(string), typeof(bool) }),
+                    GetItem = typeof(IDataRecord).GetProperties(BindingFlags.Instance | BindingFlags.Public)
                         .Where(p => p.GetIndexParameters().Any() && p.GetIndexParameters()[0].ParameterType == typeof(int))
                         .Select(p => p.GetGetMethod()).First();
 
@@ -1455,7 +1444,7 @@ Type type, IDataReader reader, int startBound = 0, int length = -1, bool returnN
 #endif
 )
         {
-            var dm = new DynamicMethod(string.Format("Deserialize{0}", Guid.NewGuid()), type, new[] { typeof(IDataReader) }, true);
+            var dm = new DynamicMethod($"Deserialize{Guid.NewGuid()}", type, new[] { typeof(IDataReader) }, true);
 
             var il = dm.GetILGenerator();
             il.DeclareLocal(typeof(int));
@@ -1510,7 +1499,7 @@ Type type, IDataReader reader, int startBound = 0, int length = -1, bool returnN
                     EmitInt32(il, index); // stack is now [target][target][reader][index]
                     il.Emit(OpCodes.Dup);// stack is now [target][target][reader][index][index]
                     il.Emit(OpCodes.Stloc_0);// stack is now [target][target][reader][index]
-                    il.Emit(OpCodes.Callvirt, getItem); // stack is now [target][target][value-as-object]
+                    il.Emit(OpCodes.Callvirt, GetItem); // stack is now [target][target][value-as-object]
 
 
                     Type memberType = item.Property != null ? item.Property.Type : item.Field.FieldType;
@@ -1553,7 +1542,7 @@ Type type, IDataReader reader, int startBound = 0, int length = -1, bool returnN
                             il.EmitCall(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle"), null);// stack is now [target][target][enum-type]
                             il.Emit(OpCodes.Ldloc_2); // stack is now [target][target][enum-type][string]
                             il.Emit(OpCodes.Ldc_I4_1); // stack is now [target][target][enum-type][string][true]
-                            il.EmitCall(OpCodes.Call, enumParse, null); // stack is now [target][target][enum-as-object]
+                            il.EmitCall(OpCodes.Call, EnumParse, null); // stack is now [target][target][enum-as-object]
 
                             il.Emit(OpCodes.Unbox_Any, unboxType); // stack is now [target][target][typed-value]
 
@@ -1655,7 +1644,7 @@ Type type, IDataReader reader, int startBound = 0, int length = -1, bool returnN
                     value = Convert.ToString(val) + " - " + Type.GetTypeCode(val.GetType());
                 }
             }
-            throw new DataException(string.Format("Error parsing column {0} ({1}={2})", index, name, value), ex);
+            throw new DataException($"Error parsing column {index} ({name}={value})", ex);
         }
         private static void EmitInt32(ILGenerator il, int value)
         {
@@ -1689,30 +1678,30 @@ Type type, IDataReader reader, int startBound = 0, int length = -1, bool returnN
         /// </summary>
         public class GridReader : IDisposable
         {
-            private IDataReader reader;
-            private IDbCommand command;
-            private Identity identity;
+            private IDataReader _reader;
+            private IDbCommand _command;
+            private Identity _identity;
 
             internal GridReader(IDbCommand command, IDataReader reader, Identity identity)
             {
-                this.command = command;
-                this.reader = reader;
-                this.identity = identity;
+                this._command = command;
+                this._reader = reader;
+                this._identity = identity;
             }
             /// <summary>
             /// Read the next grid of results
             /// </summary>
             public IEnumerable<T> Read<T>()
             {
-                if (reader == null) throw new ObjectDisposedException(GetType().Name);
-                if (consumed) throw new InvalidOperationException("Each grid can only be iterated once");
-                var typedIdentity = identity.ForGrid(typeof(T), gridIndex);
+                if (_reader == null) throw new ObjectDisposedException(GetType().Name);
+                if (_consumed) throw new InvalidOperationException("Each grid can only be iterated once");
+                var typedIdentity = _identity.ForGrid(typeof(T), _gridIndex);
                 CacheInfo cache = GetCacheInfo(typedIdentity);
                 var deserializer = cache.Deserializer;
 
                 Func<Func<IDataReader, object>> deserializerGenerator = () =>
                 {
-                    deserializer = GetDeserializer(typeof(T), reader, 0, -1, false);
+                    deserializer = GetDeserializer(typeof(T), _reader, 0, -1, false);
                     cache.Deserializer = deserializer;
                     return deserializer;
                 };
@@ -1721,23 +1710,23 @@ Type type, IDataReader reader, int startBound = 0, int length = -1, bool returnN
                 {
                     deserializer = deserializerGenerator();
                 }
-                consumed = true;
-                return ReadDeferred<T>(gridIndex, deserializer, typedIdentity, deserializerGenerator);
+                _consumed = true;
+                return ReadDeferred<T>(_gridIndex, deserializer, deserializerGenerator);
             }
 
             private IEnumerable<TReturn> MultiReadInternal<TFirst, TSecond, TThird, TFourth, TFifth, TReturn>(object func, string splitOn)
             {
 
-                var identity = this.identity.ForGrid(typeof(TReturn), new Type[] { 
+                var identity = this._identity.ForGrid(typeof(TReturn), new Type[] { 
                     typeof(TFirst), 
                     typeof(TSecond),
                     typeof(TThird),
                     typeof(TFourth),
                     typeof(TFifth)
-                }, gridIndex);
+                }, _gridIndex);
                 try
                 {
-                    foreach (var r in SqlMapper.MultiMapImpl<TFirst, TSecond, TThird, TFourth, TFifth, TReturn>(null, null, func, null, null, splitOn, null, null, reader, identity))
+                    foreach (var r in MultiMapImpl<TFirst, TSecond, TThird, TFourth, TFifth, TReturn>(null, null, func, null, null, splitOn, null, null, _reader, identity))
                     {
                         yield return r;
                     }
@@ -1824,41 +1813,41 @@ Type type, IDataReader reader, int startBound = 0, int length = -1, bool returnN
             }
 #endif
 
-            private IEnumerable<T> ReadDeferred<T>(int index, Func<IDataReader, object> deserializer, Identity typedIdentity, Func<Func<IDataReader, object>> deserializerGenerator)
+            private IEnumerable<T> ReadDeferred<T>(int index, Func<IDataReader, object> deserializer, Func<Func<IDataReader, object>> deserializerGenerator)
             {
                 try
                 {
-                    while (index == gridIndex && reader.Read())
+                    while (index == _gridIndex && _reader.Read())
                     {
                         object next;
                         try
                         {
-                            next = deserializer(reader);
+                            next = deserializer(_reader);
                         }
                         catch (DataException)
                         {
                             deserializer = deserializerGenerator();
-                            next = deserializer(reader);
+                            next = deserializer(_reader);
                         }
                         yield return (T)next;
                     }
                 }
                 finally // finally so that First etc progresses things even when multiple rows
                 {
-                    if (index == gridIndex)
+                    if (index == _gridIndex)
                     {
                         NextResult();
                     }
                 }
             }
-            private int gridIndex;
-            private bool consumed;
+            private int _gridIndex;
+            private bool _consumed;
             private void NextResult()
             {
-                if (reader.NextResult())
+                if (_reader.NextResult())
                 {
-                    gridIndex++;
-                    consumed = false;
+                    _gridIndex++;
+                    _consumed = false;
                 }
                 else
                 {
@@ -1871,15 +1860,15 @@ Type type, IDataReader reader, int startBound = 0, int length = -1, bool returnN
             /// </summary>
             public void Dispose()
             {
-                if (reader != null)
+                if (_reader != null)
                 {
-                    reader.Dispose();
-                    reader = null;
+                    _reader.Dispose();
+                    _reader = null;
                 }
-                if (command != null)
+                if (_command != null)
                 {
-                    command.Dispose();
-                    command = null;
+                    _command.Dispose();
+                    _command = null;
                 }
             }
         }
@@ -1890,10 +1879,10 @@ Type type, IDataReader reader, int startBound = 0, int length = -1, bool returnN
     /// </summary>
     public class DynamicParameters : SqlMapper.IDynamicParameters
     {
-        static Dictionary<SqlMapper.Identity, Action<IDbCommand, object>> paramReaderCache = new Dictionary<SqlMapper.Identity, Action<IDbCommand, object>>();
+        static Dictionary<SqlMapper.Identity, Action<IDbCommand, object>> _paramReaderCache = new Dictionary<SqlMapper.Identity, Action<IDbCommand, object>>();
 
-        Dictionary<string, ParamInfo> parameters = new Dictionary<string, ParamInfo>();
-        List<object> templates;
+        Dictionary<string, ParamInfo> _parameters = new Dictionary<string, ParamInfo>();
+        List<object> _templates;
 
         class ParamInfo
         {
@@ -1942,24 +1931,24 @@ dynamic param
 
                 if (subDynamic == null)
                 {
-                    templates = templates ?? new List<object>();
-                    templates.Add(obj);
+                    _templates = _templates ?? new List<object>();
+                    _templates.Add(obj);
                 }
                 else
                 {
-                    if (subDynamic.parameters != null)
+                    if (subDynamic._parameters != null)
                     {
-                        foreach (var kvp in subDynamic.parameters)
+                        foreach (var kvp in subDynamic._parameters)
                         {
-                            parameters.Add(kvp.Key, kvp.Value);
+                            _parameters.Add(kvp.Key, kvp.Value);
                         }
                     }
 
-                    if (subDynamic.templates != null)
+                    if (subDynamic._templates != null)
                     {
-                        foreach (var t in subDynamic.templates)
+                        foreach (var t in subDynamic._templates)
                         {
-                            templates.Add(t);
+                            _templates.Add(t);
                         }
                     }
                 }
@@ -1982,7 +1971,7 @@ string name, object value = null, DbType? dbType = null, ParameterDirection? dir
 #endif
 )
         {
-            parameters[Clean(name)] = new ParamInfo() { Name = name, Value = value, ParameterDirection = direction ?? ParameterDirection.Input, DbType = dbType, Size = size };
+            _parameters[Clean(name)] = new ParamInfo() { Name = name, Value = value, ParameterDirection = direction ?? ParameterDirection.Input, DbType = dbType, Size = size };
         }
 
         static string Clean(string name)
@@ -2002,19 +1991,19 @@ string name, object value = null, DbType? dbType = null, ParameterDirection? dir
 
         void SqlMapper.IDynamicParameters.AddParameters(IDbCommand command, SqlMapper.Identity identity)
         {
-            if (templates != null)
+            if (_templates != null)
             {
-                foreach (var template in templates)
+                foreach (var template in _templates)
                 {
                     var newIdent = identity.ForDynamicParameters(template.GetType());
                     Action<IDbCommand, object> appender;
 
-                    lock (paramReaderCache)
+                    lock (_paramReaderCache)
                     {
-                        if (!paramReaderCache.TryGetValue(newIdent, out appender))
+                        if (!_paramReaderCache.TryGetValue(newIdent, out appender))
                         {
                             appender = SqlMapper.CreateParamInfoGenerator(newIdent);
-                            paramReaderCache[newIdent] = appender;
+                            _paramReaderCache[newIdent] = appender;
                         }
                     }
 
@@ -2022,7 +2011,7 @@ string name, object value = null, DbType? dbType = null, ParameterDirection? dir
                 }
             }
 
-            foreach (var param in parameters.Values)
+            foreach (var param in _parameters.Values)
             {
                 var p = command.CreateParameter();
                 var val = param.Value;
@@ -2058,7 +2047,7 @@ string name, object value = null, DbType? dbType = null, ParameterDirection? dir
         /// <returns>The value, note DBNull.Value is not returned, instead the value is returned as null</returns>
         public T Get<T>(string name)
         {
-            var val = parameters[Clean(name)].AttachedParam.Value;
+            var val = _parameters[Clean(name)].AttachedParam.Value;
             if (val == DBNull.Value)
             {
                 if (default(T) != null)

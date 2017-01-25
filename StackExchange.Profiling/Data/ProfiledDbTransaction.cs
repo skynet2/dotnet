@@ -28,8 +28,8 @@ namespace StackExchange.Profiling.Data
         /// <param name="connection">The connection.</param>
         public ProfiledDbTransaction(DbTransaction transaction, ProfiledDbConnection connection)
         {
-            if (transaction == null) throw new ArgumentNullException("transaction");
-            if (connection == null) throw new ArgumentNullException("connection");
+            if (transaction == null) throw new ArgumentNullException(nameof(transaction));
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
             _transaction = transaction;
             _connection = connection;
         }
@@ -37,26 +37,17 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the database connection.
         /// </summary>
-        protected override DbConnection DbConnection
-        {
-            get { return _connection; }
-        }
+        protected override DbConnection DbConnection => _connection;
 
         /// <summary>
         /// Gets the wrapped transaction.
         /// </summary>
-        public DbTransaction WrappedTransaction
-        {
-            get { return _transaction; }
-        }
+        public DbTransaction WrappedTransaction => _transaction;
 
         /// <summary>
         /// Gets the isolation level.
         /// </summary>
-        public override IsolationLevel IsolationLevel
-        {
-            get { return _transaction.IsolationLevel; }
-        }
+        public override IsolationLevel IsolationLevel => _transaction.IsolationLevel;
 
         /// <summary>
         /// commit the transaction.

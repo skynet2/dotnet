@@ -4,6 +4,7 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace StackExchange.Profiling.SqlFormatters
 {
@@ -250,7 +251,7 @@ namespace StackExchange.Profiling.SqlFormatters
         /// </summary>
         /// <param name="parameter"></param>
         /// <returns></returns>
-        protected string PrepareValue(SqlTimingParameter parameter)
+        protected object PrepareValue(SqlTimingParameter parameter)
         {
             if (parameter.Value == null)
             {
@@ -261,19 +262,23 @@ namespace StackExchange.Profiling.SqlFormatters
             {
                 if (parameter.DbType == "Boolean")
                 {
-                    return parameter.Value == "True" ? "1" : "0";
+                    return parameter.Value.ToString() == "True" ? "1" : "0";
                 }
 
                 return parameter.Value;
             }
 
             var prefix = string.Empty;
+
             if (parameter.DbType == "String" || parameter.DbType == "StringFixedLength")
             {
                 prefix = "N";
             }
 
-            return prefix + "'" + parameter.Value.Replace("'", "''") + "'";
+            if(parameter.DbType == "Object")
+                return prefix + "'" + JsonConvert.SerializeObject(parameter.Value) + "'";
+
+            return prefix + "'" + parameter.Value.ToString().Replace("'", "''") + "'";
         }
     }
 }

@@ -31,34 +31,22 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the connection timeout.
         /// </summary>
-        public int ConnectionTimeout
-        {
-            get { return _connection.ConnectionTimeout; }
-        }
+        public int ConnectionTimeout => _connection.ConnectionTimeout;
 
         /// <summary>
         /// Gets the database.
         /// </summary>
-        public string Database
-        {
-            get { return _connection.Database; }
-        }
+        public string Database => _connection.Database;
 
         /// <summary>
         /// Gets the state.
         /// </summary>
-        public ConnectionState State
-        {
-            get { return _connection.State; }
-        }
+        public ConnectionState State => _connection.State;
 
         /// <summary>
         /// Gets the internally wrapped <see cref="IDbConnection"/>
         /// </summary>
-        public IDbConnection WrappedConnection
-        {
-            get { return _connection; }
-        }
+        public IDbConnection WrappedConnection => _connection;
 
         /// <summary>
         /// Initialises a new instance of the <see cref="SimpleProfiledConnection"/> class. 

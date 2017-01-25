@@ -25,25 +25,25 @@ namespace StackExchange.Profiling.Data
         /// </param>
         private Link(TKey key, TValue value, Link<TKey, TValue> tail)
         {
-            this.Key = key;
-            this.Value = value;
-            this.Tail = tail;
+            Key = key;
+            Value = value;
+            Tail = tail;
         }
 
         /// <summary>
         /// Gets the key.
         /// </summary>
-        public TKey Key { get; private set; }
+        public TKey Key { get; }
 
         /// <summary>
         /// Gets the value.
         /// </summary>
-        public TValue Value { get; private set; }
+        public TValue Value { get; }
 
         /// <summary>
         /// Gets the tail.
         /// </summary>
-        public Link<TKey, TValue> Tail { get; private set; }
+        public Link<TKey, TValue> Tail { get; }
 
         /// <summary>
         /// try and return a value from the cache based on the key.

@@ -47,10 +47,7 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the underlying adapter.  Useful for when APIs can't handle the wrapped adapter (e.g. CommandBuilder).
         /// </summary>
-        public IDbDataAdapter InternalAdapter
-        {
-            get { return _adapter; }
-        }
+        public IDbDataAdapter InternalAdapter => _adapter;
 
         /// <summary>
         /// Initialises a new instance of the <see cref="ProfiledDbDataAdapter"/> class.
@@ -61,7 +58,7 @@ namespace StackExchange.Profiling.Data
         {
             if (wrappedAdapter == null)
             {
-                throw new ArgumentNullException("wrappedAdapter");
+                throw new ArgumentNullException(nameof(wrappedAdapter));
             }
 
             _adapter = wrappedAdapter;
@@ -245,10 +242,7 @@ namespace StackExchange.Profiling.Data
         /// Gets how a source table is mapped to a dataset table.
         /// </summary>
         /// <returns>A collection that provides the master mapping between the returned records and the <see cref="T:System.Data.DataSet"/>. The default value is an empty collection.</returns>
-        public new ITableMappingCollection TableMappings
-        {
-            get { return _adapter.TableMappings; }
-        }
+        public new ITableMappingCollection TableMappings => _adapter.TableMappings;
 
         /// <summary>
         /// Gets or sets an SQL statement used to select records in the data source.

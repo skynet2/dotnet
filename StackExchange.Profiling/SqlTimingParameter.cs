@@ -18,7 +18,7 @@ namespace StackExchange.Profiling
         /// The value submitted to the database.
         /// </summary>
         [DataMember(Order = 2)]
-        public string Value { get; set; }
+        public object Value { get; set; }
 
         /// <summary>
         /// System.Data.DbType, e.g. "String", "Bit"

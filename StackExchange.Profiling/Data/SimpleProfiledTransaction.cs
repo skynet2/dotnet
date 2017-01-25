@@ -24,8 +24,8 @@ namespace StackExchange.Profiling.Data
         /// </summary>
         public SimpleProfiledTransaction(IDbTransaction transaction, SimpleProfiledConnection connection)
         {
-            if (transaction == null) throw new ArgumentNullException("transaction");
-            if (connection == null) throw new ArgumentNullException("connection");
+            if (transaction == null) throw new ArgumentNullException(nameof(transaction));
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
             _transaction = transaction;
             _connection = connection;
         }
@@ -33,26 +33,17 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the internal wrapped transaction
         /// </summary>
-        public IDbTransaction WrappedTransaction
-        {
-            get { return _transaction; }
-        }
+        public IDbTransaction WrappedTransaction => _transaction;
 
         /// <summary>
         /// Gets the connection.
         /// </summary>
-        public IDbConnection Connection
-        {
-            get { return _connection; }
-        }
+        public IDbConnection Connection => _connection;
 
         /// <summary>
         /// Gets the isolation level.
         /// </summary>
-        public IsolationLevel IsolationLevel
-        {
-            get { return _transaction.IsolationLevel; }
-        }
+        public IsolationLevel IsolationLevel => _transaction.IsolationLevel;
 
         /// <summary>
         /// commit the transaction.

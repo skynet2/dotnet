@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
-using System.Web;
 using System.Web.Script.Serialization;
 using StackExchange.Profiling.Helpers;
 using StackExchange.Profiling.Storage;

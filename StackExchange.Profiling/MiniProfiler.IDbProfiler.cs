@@ -10,7 +10,7 @@ namespace StackExchange.Profiling
         /// <summary>
         /// Contains information about queries executed during this profiling session.
         /// </summary>
-        internal SqlProfiler SqlProfiler { get; private set; }
+        internal SqlProfiler SqlProfiler { get; }
 
         // IDbProfiler methods
 
@@ -43,7 +43,8 @@ namespace StackExchange.Profiling
 
 
         bool _isActive;
-        bool IDbProfiler.IsActive { get { return _isActive; } }
+        bool IDbProfiler.IsActive => _isActive;
+
         internal bool IsActive
         {
             get { return _isActive; }

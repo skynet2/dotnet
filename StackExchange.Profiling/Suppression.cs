@@ -29,7 +29,7 @@ namespace StackExchange.Profiling
         {
             if (profiler == null)
             {
-                throw new ArgumentNullException("profiler");
+                throw new ArgumentNullException(nameof(profiler));
             }
 
             Profiler = profiler;
@@ -45,7 +45,7 @@ namespace StackExchange.Profiling
         /// <summary>
         /// Gets a reference to the containing profiler, allowing this Suppression to affect profiler activity.
         /// </summary>
-        internal MiniProfiler Profiler { get; private set; }
+        internal MiniProfiler Profiler { get; }
 
         void IDisposable.Dispose()
         {

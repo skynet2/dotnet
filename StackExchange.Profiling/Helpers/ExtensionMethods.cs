@@ -1,6 +1,4 @@
-﻿using System;
-using System.Text.RegularExpressions;
-using System.Web.Script.Serialization;
+﻿using System.Web.Script.Serialization;
 
 namespace StackExchange.Profiling.Helpers
 {

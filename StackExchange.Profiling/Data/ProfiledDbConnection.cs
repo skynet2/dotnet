@@ -22,10 +22,7 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the underlying, real database connection to your database provider.
         /// </summary>
-        public DbConnection InnerConnection
-        {
-            get { return _connection; }
-        }
+        public DbConnection InnerConnection => _connection;
 
         /// <summary>
         /// This will be made private; use <see cref="Profiler"/>
@@ -38,10 +35,7 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the current profiler instance; could be null.
         /// </summary>
-        public IDbProfiler Profiler
-        {
-            get { return _profiler; }
-        }
+        public IDbProfiler Profiler => _profiler;
 
         /// <summary>
         /// Initialises a new instance of the <see cref="ProfiledDbConnection"/> class. 
@@ -56,7 +50,7 @@ namespace StackExchange.Profiling.Data
         /// </param>
         public ProfiledDbConnection(DbConnection connection, IDbProfiler profiler)
         {
-            if (connection == null) throw new ArgumentNullException("connection");
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
 
             _connection = connection;
             _connection.StateChange += StateChangeHandler;
@@ -70,18 +64,12 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the wrapped connection.
         /// </summary>
-        public DbConnection WrappedConnection
-        {
-            get { return _connection; }
-        }
+        public DbConnection WrappedConnection => _connection;
 
         /// <summary>
         /// Gets a value indicating whether events can be raised.
         /// </summary>
-        protected override bool CanRaiseEvents
-        {
-            get { return true; }
-        }
+        protected override bool CanRaiseEvents => true;
 
         /// <summary>
         /// Gets or sets the connection string.
@@ -95,42 +83,27 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the connection timeout.
         /// </summary>
-        public override int ConnectionTimeout
-        {
-            get { return _connection.ConnectionTimeout; }
-        }
+        public override int ConnectionTimeout => _connection.ConnectionTimeout;
 
         /// <summary>
         /// Gets the database.
         /// </summary>
-        public override string Database
-        {
-            get { return _connection.Database; }
-        }
+        public override string Database => _connection.Database;
 
         /// <summary>
         /// Gets the data source.
         /// </summary>
-        public override string DataSource
-        {
-            get { return _connection.DataSource; }
-        }
+        public override string DataSource => _connection.DataSource;
 
         /// <summary>
         /// Gets the server version.
         /// </summary>
-        public override string ServerVersion
-        {
-            get { return _connection.ServerVersion; }
-        }
+        public override string ServerVersion => _connection.ServerVersion;
 
         /// <summary>
         /// Gets the state.
         /// </summary>
-        public override ConnectionState State
-        {
-            get { return _connection.State; }
-        }
+        public override ConnectionState State => _connection.State;
 
         /// <summary>
         /// change the database.

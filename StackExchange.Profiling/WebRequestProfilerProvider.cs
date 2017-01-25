@@ -1,4 +1,7 @@
-﻿using System.Web;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Web;
 using System.Web.Routing;
 
 namespace StackExchange.Profiling
@@ -11,18 +14,21 @@ namespace StackExchange.Profiling
     public class WebRequestProfilerProvider : BaseProfilerProvider
     {
         /// <summary>
+        /// 
+        /// </summary>
+        public static ConcurrentDictionary<string, object> LocalCache = new ConcurrentDictionary<string, object>();
+        private string Id { get; set; }
+        /// <summary>
         /// Starts a new MiniProfiler and associates it with the current <see cref="HttpContext.Current"/>.
         /// </summary>
         public override MiniProfiler Start(string sessionName = null)
         {
-            var context = HttpContext.Current;
+            if (string.IsNullOrEmpty(sessionName))
+                sessionName = Guid.NewGuid().ToString();
 
-            if (context?.Request.AppRelativeCurrentExecutionFilePath == null)
-                return null;
+            Id = sessionName;
 
-            var url = context.Request.Url;
-
-            var result = new MiniProfiler(sessionName ?? url.OriginalString);
+            var result = new MiniProfiler(Id);
 
             Current = result;
 
@@ -42,10 +48,9 @@ namespace StackExchange.Profiling
         /// </param>
         public override void Stop(bool discardResults)
         {
-            var context = HttpContext.Current;
             var current = Current;
 
-            if (context == null || current == null)
+            if (current == null)
                 return;
 
             // stop our timings - when this is false, we've already called .Stop before on this session
@@ -58,43 +63,8 @@ namespace StackExchange.Profiling
                 return;
             }
 
-            var request = context.Request;
-
-            // set the profiler name to Controller/Action or /url
-            EnsureName(current, request);
-
             // save the profiler
             SaveProfiler(current);
-        }
-
-        /// <summary>
-        /// Makes sure 'profiler' has a Name, pulling it from route data or url.
-        /// </summary>
-        private static void EnsureName(MiniProfiler profiler, HttpRequest request)
-        {
-            // also set the profiler name to Controller/Action or /url
-            if (!string.IsNullOrWhiteSpace(profiler.Name))
-                return;
-
-            var rc = request.RequestContext;
-            RouteValueDictionary values;
-
-            if (rc?.RouteData != null && (values = rc.RouteData.Values).Count > 0)
-            {
-                var controller = values["Controller"];
-                var action = values["Action"];
-
-                if (controller != null && action != null)
-                    profiler.Name = controller + "/" + action;
-            }
-
-            if (!string.IsNullOrWhiteSpace(profiler.Name))
-                return;
-
-            profiler.Name = request.Url.AbsolutePath;
-
-            if (profiler.Name.Length > 50)
-                profiler.Name = profiler.Name.Remove(50);
         }
 
         /// <summary>
@@ -105,9 +75,6 @@ namespace StackExchange.Profiling
             return Current;
         }
 
-
-        private const string CacheKey = ":mini-profiler:";
-
         /// <summary>
         /// Gets the currently running MiniProfiler for the current HttpContext; null if no MiniProfiler was <see cref="Start(string)"/>ed.
         /// </summary>
@@ -115,18 +82,14 @@ namespace StackExchange.Profiling
         {
             get
             {
-                var context = HttpContext.Current;
+                object obj;
+                LocalCache.TryGetValue(Id, out obj);
 
-                return context?.Items[CacheKey] as MiniProfiler;
+                return obj as MiniProfiler;
             }
             set
             {
-                var context = HttpContext.Current;
-
-                if (context == null)
-                    return;
-
-                context.Items[CacheKey] = value;
+                LocalCache.TryAdd(Id, value);
             }
         }
     }

@@ -41,13 +41,7 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets a value indicating whether a data source enumerator can be created.
         /// </summary>
-        public override bool CanCreateDataSourceEnumerator
-        {
-            get
-            {
-                return _tail.CanCreateDataSourceEnumerator;
-            }
-        }
+        public override bool CanCreateDataSourceEnumerator => _tail.CanCreateDataSourceEnumerator;
 
         /// <summary>
         /// create the command.

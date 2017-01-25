@@ -23,7 +23,7 @@ namespace StackExchange.Profiling
         private const int MaxByteParameterSize = 512;
 
         private readonly CustomTiming _customTiming;
-
+        private List<SqlTimingParameter> Parameters { get; set; }
         /// <summary>
         /// Initialises a new instance of the <see cref="SqlTiming"/> class. 
         /// Creates a new <c>SqlTiming</c> to profile 'command'.
@@ -34,10 +34,10 @@ namespace StackExchange.Profiling
                 throw new ArgumentNullException(nameof(profiler));
 
             var commandText = AddSpacesToParameters(command.CommandText);
-            var parameters = GetCommandParameters(command);
+            Parameters = GetCommandParameters(command);
 
             if (MiniProfiler.Settings.SqlFormatter != null)
-                commandText = MiniProfiler.Settings.SqlFormatter.GetFormattedSql(commandText, parameters, command);
+                commandText = MiniProfiler.Settings.SqlFormatter.GetFormattedSql(commandText, Parameters, command);
 
             _customTiming = profiler.CustomTiming("sql", commandText, type.ToString());
 
@@ -48,7 +48,7 @@ namespace StackExchange.Profiling
         /// <summary>
         /// Gets or sets the offset from main <c>MiniProfiler</c> start that this custom command began.
         /// </summary>
-        public decimal StartMilliseconds { get { return _customTiming.StartMilliseconds; } }
+        public decimal StartMilliseconds => _customTiming.StartMilliseconds;
 
         /// <summary>
         /// Returns a snippet of the SQL command and the duration.
@@ -103,7 +103,7 @@ namespace StackExchange.Profiling
         /// <summary>
         /// Returns the value of <paramref name="parameter"/> suitable for storage/display.
         /// </summary>
-        private static string GetValue(IDataParameter parameter)
+        private static object GetValue(IDataParameter parameter)
         {
             var rawValue = parameter.Value;
 
@@ -145,7 +145,7 @@ namespace StackExchange.Profiling
                         }
                     }
 
-                    return JsonConvert.SerializeObject(result);
+                    return result;
                 }
             }
 
@@ -193,7 +193,8 @@ namespace StackExchange.Profiling
         /// </summary>
         public static List<SqlTimingParameter> GetCommandParameters(IDbCommand command)
         {
-            if (command.Parameters == null || command.Parameters.Count == 0) return null;
+            if (command.Parameters == null || command.Parameters.Count == 0)
+                return null;
 
             var result = new List<SqlTimingParameter>();
 

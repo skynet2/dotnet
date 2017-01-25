@@ -25,7 +25,7 @@ namespace StackExchange.Profiling.Data
         /// <param name="profiler">The profiler.</param>
         public SimpleProfiledDataReader(IDataReader reader, IDbProfiler profiler)
         {
-            if (reader == null) throw new ArgumentNullException("reader");
+            if (reader == null) throw new ArgumentNullException(nameof(reader));
 
             _reader = reader;
 
@@ -318,10 +318,7 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the field count.
         /// </summary>
-        public int FieldCount
-        {
-            get { return _reader.FieldCount; }
-        }
+        public int FieldCount => _reader.FieldCount;
 
         /// <summary>
         /// The 
@@ -332,10 +329,7 @@ namespace StackExchange.Profiling.Data
         /// <returns>
         /// The <see cref="object"/>.
         /// </returns>
-        public object this[int index]
-        {
-            get { return _reader[index]; }
-        }
+        public object this[int index] => _reader[index];
 
         /// <summary>
         /// The 
@@ -346,10 +340,7 @@ namespace StackExchange.Profiling.Data
         /// <returns>
         /// The <see cref="object"/>.
         /// </returns>
-        public object this[string name]
-        {
-            get { return _reader[name]; }
-        }
+        public object this[string name] => _reader[name];
 
         /// <summary>
         /// The close.
@@ -404,26 +395,17 @@ namespace StackExchange.Profiling.Data
         /// <summary>
         /// Gets the depth.
         /// </summary>
-        public int Depth
-        {
-            get { return _reader.Depth; }
-        }
+        public int Depth => _reader.Depth;
 
         /// <summary>
         /// Gets a value indicating whether is closed.
         /// </summary>
-        public bool IsClosed
-        {
-            get { return _reader.IsClosed; }
-        }
+        public bool IsClosed => _reader.IsClosed;
 
         /// <summary>
         /// Gets the number of records affected.
         /// </summary>
-        public int RecordsAffected
-        {
-            get { return _reader.RecordsAffected; }
-        }
+        public int RecordsAffected => _reader.RecordsAffected;
 
         /// <summary>
         /// dispose the command / connection and profiler.
